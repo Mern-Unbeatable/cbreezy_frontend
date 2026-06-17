@@ -21,7 +21,6 @@ export default function Banner() {
     setCurrent(index);
   };
 
-  
   return (
     <div className="w-full h-[calc(55vh-80px)] sm:h-[calc(50vh-80px)] md:h-[calc(90vh-64px)] bg-black relative overflow-hidden">
       

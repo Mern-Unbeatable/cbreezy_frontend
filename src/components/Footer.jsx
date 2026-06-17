@@ -6,11 +6,8 @@ export default function Footer() {
       <div className="container mx-auto px-4">
         <div className="grid gap-10 py-8 md:grid-cols-[1fr_1.2fr] md:items-center md:gap-12">
           <div className="max-w-md self-start px-4">
-            <div className="">
-              <Link
-                to="/"
-                className="inline-flex w-fit shrink-0 cursor-pointer"
-              >
+            <div className="mb-6">
+              <Link to="/" className="inline-flex w-fit shrink-0 cursor-pointer">
                 <img
                   src="/logo.png"
                   alt="SIDEGURUS Logo"
@@ -19,19 +16,10 @@ export default function Footer() {
               </Link>
             </div>
 
-            <p className=" max-w-sm text-sm leading-relaxed text-[#2B2B2B] text-justify ">
-              <p>At SideGurus, our belief is everyone has a skill, passion, or
-              hustle that deserves to be seen. Whether you are a seasoned
-              professional, a self-taught expert, or just getting started,
-              SideGurus.com empowers individuals and small businesses to
-              showcase their services and connect with clients in their local
-              communities. </p>
-              
-             
-            {/* <p> Our platform makes it easier than ever to turn side
-              hustles into thriving businesses. From hairstylists and tutors to
-              personal trainers, handymen, and creatives, SideGurus.com is where
-              local talent shines.</p> */}
+            <p className="sm:mb-6 max-w-sm text-sm leading-relaxed text-[#2B2B2B]">
+              At SideGurus, our mission is to connect people with trusted local
+              services, making it easier for individuals and businesses to find
+              the right help when they need it most.
             </p>
           </div>
 
@@ -98,7 +86,7 @@ export default function Footer() {
                     to="/sideguru-suggestions"
                     className="text-sm text-gray-600 transition-colors hover:text-[#e07b39]"
                   >
-                    Sideguru Suggestions
+                    Sideguru suggestions
                   </Link>
                 </li>
               </ul>

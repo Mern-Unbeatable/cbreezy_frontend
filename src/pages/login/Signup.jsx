@@ -320,7 +320,7 @@ export default function Signup() {
                     {loadingRegions ? "Loading..." : formData.country ? "Select Region" : "Select Country First"}
                   </option>
                   {regions.map((region) => (
-                    <option key={region.id} value={region.id}>
+                    <option key={region.id} value={region.name}>
                       {region.name}
                     </option>
                   ))}

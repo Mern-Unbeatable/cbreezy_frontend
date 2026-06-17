@@ -71,17 +71,6 @@ const normalizeCountriesWithRegions = (payload) => {
     .filter((item) => item.name);
 };
 
-const normalizeCities = (payload) => {
-  const list = normalizeList(payload);
-
-  return list
-    .map((item) => ({
-      id: item?.id ?? item?._id ?? item?.cityId ?? item?.name,
-      name: item?.cityName ?? item?.name ?? item?.title,
-    }))
-    .filter((item) => item.name);
-};
-
 export const fetchCategoriesByTabAPI = async (tab) => {
   const endpoint = tab === "Events" ? HOME_SEARCH_ENDPOINTS.EVENT_CATEGORIES : HOME_SEARCH_ENDPOINTS.SERVICE_CATEGORIES;
   const response = await apiClient.get(endpoint);
@@ -96,9 +85,4 @@ export const fetchCountriesAPI = async () => {
 export const fetchCountriesWithRegionsAPI = async () => {
   const response = await apiClient.get(HOME_SEARCH_ENDPOINTS.COUNTRIES_WITH_REGIONS);
   return normalizeCountriesWithRegions(response.data);
-};
-
-export const fetchCitiesByRegionAPI = async (regionId) => {
-  const response = await apiClient.get(HOME_SEARCH_ENDPOINTS.REGION_CITIES(regionId));
-  return normalizeCities(response.data);
 };

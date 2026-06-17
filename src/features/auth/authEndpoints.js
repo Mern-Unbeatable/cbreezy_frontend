@@ -15,5 +15,4 @@ export const AUTH_ENDPOINTS = {
 export const LOCATION_ENDPOINTS = {
   COUNTRIES: "/api/locations/countries",
   REGIONS_BY_COUNTRY: (countryId) => `/api/locations/countries/${countryId}/regions`,
-  CITIES_BY_REGION: (regionId) => `/api/locations/regions/${regionId}/cities`,
 };

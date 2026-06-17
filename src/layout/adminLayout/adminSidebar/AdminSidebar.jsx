@@ -14,7 +14,6 @@ import {
   House,
   UsersRound, 
   NotebookTabs,
-  MessageSquare,
   Copy,
  
 } from 'lucide-react'
@@ -28,7 +27,6 @@ const Sidebar = ({ isOpen = true, onClose = null, isMobile = false }) => {
     { name: 'Categories', path: '/admin/categories', icon: Copy  },
     { name: 'User', path: '/admin/user', icon: UsersRound },
     { name: 'Listings', path: '/admin/listings', icon: NotebookTabs  },
-    { name: 'Support Tickets', path: '/admin/support-tickets', icon: MessageSquare },
     { name: 'Revenue', path: '/admin/revenue', icon: BarChart3 },
     { name: 'Pricing & Country', path: '/admin/pricing', icon: Tag },
   ]

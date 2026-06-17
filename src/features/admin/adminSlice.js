@@ -230,11 +230,11 @@ export const deleteAdminServiceSubCategory = createAsyncThunk(
 
 export const fetchAdminPricingData = createAsyncThunk(
   "admin/fetchAdminPricingData",
-  async (query = "", { rejectWithValue }) => {
+  async (_, { rejectWithValue }) => {
     try {
       const [pricingPlans, locationPayload] = await Promise.all([
         fetchAdminPricingPlansAPI(),
-        fetchAdminCountriesWithRegionsAPI(query),
+        fetchAdminCountriesWithRegionsAPI(),
       ]);
 
       return {

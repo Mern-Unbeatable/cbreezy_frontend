@@ -70,11 +70,11 @@ export default function ContactUs() {
   return (
     <div className="relative min-h-screen overflow-hidden">
       <img
-        src="/Categories/About_Us.png"
+        src="/Rectangle.png"
         alt="Contact background"
-        className="absolute inset-0 h-full w-full object-cover "
+        className="absolute inset-0 h-full w-full object-cover bg-black/60"
       />
-      {/* <div className="absolute inset-0 bg-black/55" /> */}
+      <div className="absolute inset-0 bg-black/55" />
 
       <div className="relative z-10 flex min-h-screen items-center justify-center px-4 py-10">
         <div className="w-full max-w-xl rounded-lg bg-[#efe7df] p-6 shadow-2xl sm:p-7">

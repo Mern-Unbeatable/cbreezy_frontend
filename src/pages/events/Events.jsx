@@ -22,10 +22,6 @@ import {
   selectRegions,
   selectRegionsError,
   selectRegionsLoading,
-  fetchCitiesByRegion,
-  selectCities,
-  selectCitiesLoading,
-  selectCitiesError,
 } from "../../features/auth/authSlice";
 
 const priceRanges = [
@@ -46,7 +42,6 @@ export default function Events() {
     searchParams.get("categoryId") || searchParams.get("category") || searchParams.get("eventCategoryId") || "";
   const initialCountryId = searchParams.get("countryId") || searchParams.get("country") || "";
   const initialRegionId = searchParams.get("regionId") || searchParams.get("region") || "";
-  const initialCityId = searchParams.get("cityId") || searchParams.get("city") || "";
   const initialSearch = searchParams.get("search") || "";
   const initialPriceRange = searchParams.get("priceRange") || "all";
   const initialMinPrice = Number(searchParams.get("minPrice") || 0);
@@ -68,9 +63,6 @@ export default function Events() {
   const regions = useSelector(selectRegions);
   const regionsLoading = useSelector(selectRegionsLoading);
   const regionsError = useSelector(selectRegionsError);
-  const cities = useSelector(selectCities);
-  const citiesLoading = useSelector(selectCitiesLoading);
-  const citiesError = useSelector(selectCitiesError);
 
   const [minPrice, setMinPrice] = useState(Number.isNaN(initialMinPrice) ? 0 : initialMinPrice);
   const [maxPrice, setMaxPrice] = useState(Number.isNaN(initialMaxPrice) ? 1500 : initialMaxPrice);
@@ -82,7 +74,6 @@ export default function Events() {
   const [selectedCategoryId, setSelectedCategoryId] = useState(String(initialCategoryId));
   const [selectedCountry, setSelectedCountry] = useState(String(initialCountryId));
   const [selectedRegion, setSelectedRegion] = useState(String(initialRegionId));
-  const [selectedCity, setSelectedCity] = useState(String(initialCityId));
   const [selectedSearch, setSelectedSearch] = useState(initialSearch);
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
 
@@ -99,7 +90,6 @@ export default function Events() {
       searchParams.get("categoryId") || searchParams.get("category") || searchParams.get("eventCategoryId") || "";
     const nextCountryId = searchParams.get("countryId") || searchParams.get("country") || "";
     const nextRegionId = searchParams.get("regionId") || searchParams.get("region") || "";
-    const nextCityId = searchParams.get("cityId") || searchParams.get("city") || "";
     const nextSearch = searchParams.get("search") || "";
     const nextPriceRange = searchParams.get("priceRange") || "all";
     const nextMinPrice = Number(searchParams.get("minPrice") || 0);
@@ -112,7 +102,6 @@ export default function Events() {
     setSelectedCategoryId(String(nextCategoryId));
     setSelectedCountry(String(nextCountryId));
     setSelectedRegion(String(nextRegionId));
-    setSelectedCity(String(nextCityId));
     setSelectedSearch(nextSearch);
     setSelectedPriceRange(nextPriceRange);
     setMinPrice(safeMinPrice);
@@ -129,12 +118,6 @@ export default function Events() {
       dispatch(fetchRegionsByCountry(selectedCountry));
     }
   }, [dispatch, selectedCountry]);
-
-  useEffect(() => {
-    if (selectedRegion) {
-      dispatch(fetchCitiesByRegion(selectedRegion));
-    }
-  }, [dispatch, selectedRegion]);
 
   useEffect(() => {
     if (categoriesError) {
@@ -155,16 +138,9 @@ export default function Events() {
   }, [regionsError]);
 
   useEffect(() => {
-    if (citiesError) {
-      console.error(citiesError);
-    }
-  }, [citiesError]);
-
-  useEffect(() => {
     const params = {
       categoryId: selectedCategoryId || undefined,
       countryId: selectedCountry || undefined,
-      cityId: selectedCity || undefined,
       regionId: selectedRegion || undefined,
       search: selectedSearch || undefined,
       priceRange: selectedPriceRange !== "all" ? selectedPriceRange : undefined,
@@ -182,7 +158,6 @@ export default function Events() {
     selectedCategoryId,
     selectedCountry,
     selectedRegion,
-    selectedCity,
     selectedSearch,
     selectedPriceRange,
     appliedMinPrice,
@@ -247,7 +222,6 @@ export default function Events() {
   const handleCountryChange = (value) => {
     setSelectedCountry(value);
     setSelectedRegion("");
-    setSelectedCity("");
     setCurrentPage(1);
   };
 
@@ -262,17 +236,11 @@ export default function Events() {
     setSelectedCategoryId("");
     setSelectedCountry("");
     setSelectedRegion("");
-    setSelectedCity("");
     setCurrentPage(1);
   };
 
   const totalPages = pagination?.totalPages || 1;
   const totalResults = pagination?.total || events.length;
-
-  const handleCityChange = (value) => {
-    setSelectedCity(value);
-    setCurrentPage(1);
-  };
 
   const hasActiveFilters =
     appliedMinPrice > 0 ||
@@ -280,7 +248,6 @@ export default function Events() {
     Boolean(selectedCategoryId) ||
     Boolean(selectedCountry) ||
     Boolean(selectedRegion) ||
-    Boolean(selectedCity) ||
     selectedPriceRange !== "all";
 
   return (
@@ -552,26 +519,6 @@ export default function Events() {
                 />
               </div>
 
-              <div className="relative flex-1 sm:flex-none">
-                <select
-                  value={selectedCity}
-                  onChange={(e) => handleCityChange(e.target.value)}
-                  disabled={!selectedRegion || citiesLoading}
-                  className="w-full sm:w-auto appearance-none text-base border border-gray-300 rounded px-3 py-2 pr-7 text-gray-700 bg-[#FDF2EB] focus:outline-none cursor-pointer disabled:opacity-70"
-                >
-                  <option value="">{selectedRegion ? "Select City" : "City"}</option>
-                  {cities.map((city) => (
-                    <option key={city.id} value={city.id}>
-                      {city.name}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown
-                  size={12}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
-                />
-              </div>
-
               <button
                 type="button"
                 onClick={() => setIsFilterPanelOpen(true)}
@@ -690,63 +637,6 @@ export default function Events() {
                 <h3 className="text-base font-semibold text-gray-800 mb-4">
                   Price Range
                 </h3>
-                <div className="flex gap-3 mb-4">
-                  <div className="relative">
-                    <select
-                      value={selectedCountry}
-                      onChange={(e) => {
-                        handleCountryChange(e.target.value);
-                      }}
-                      disabled={countriesLoading}
-                      className="w-full appearance-none text-base border border-gray-300 rounded px-3 py-2 pr-7 text-gray-700 bg-white focus:outline-none cursor-pointer disabled:opacity-70"
-                    >
-                      <option value="">Country</option>
-                      {countries.map((country) => (
-                        <option key={country.id} value={country.id}>
-                          {country.name}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
-                  </div>
-
-                  <div className="relative">
-                    <select
-                      value={selectedRegion}
-                      onChange={(e) => {
-                        setSelectedRegion(e.target.value);
-                        setCurrentPage(1);
-                      }}
-                      disabled={!selectedCountry || regionsLoading}
-                      className="w-full appearance-none text-base border border-gray-300 rounded px-3 py-2 pr-7 text-gray-700 bg-white focus:outline-none cursor-pointer disabled:opacity-70"
-                    >
-                      <option value="">{selectedCountry ? "Select Region" : "Region"}</option>
-                      {regions.map((region) => (
-                        <option key={region.id} value={region.id}>
-                          {region.name}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
-                  </div>
-
-                  <div className="relative">
-                    <select
-                      value={selectedCity}
-                      onChange={(e) => handleCityChange(e.target.value)}
-                      disabled={!selectedRegion || citiesLoading}
-                      className="w-full appearance-none text-base border border-gray-300 rounded px-3 py-2 pr-7 text-gray-700 bg-white focus:outline-none cursor-pointer disabled:opacity-70"
-                    >
-                      <option value="">{selectedRegion ? "Select City" : "City"}</option>
-                      {cities.map((city) => (
-                        <option key={city.id} value={city.id}>
-                          {city.name}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
-                  </div>
-                </div>
                 <div className="relative w-full h-6 flex items-center mb-6">
                   <div className="absolute w-full h-1 bg-gray-200 rounded-full" />
 

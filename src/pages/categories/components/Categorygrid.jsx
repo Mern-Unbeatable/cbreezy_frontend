@@ -1,13 +1,12 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import {
-  fetchCategories,
-  selectCategories,
-  selectCategoriesLoading,
-  selectCategoriesError,
+import { 
+  fetchCategories, 
+  selectCategories, 
+  selectCategoriesLoading, 
+  selectCategoriesError 
 } from "../../../features/categories/categoriesSlice";
-import SkeletonCategoryCard from "../../../components/SkeletonCategoryCard";
 
 export default function CategoryGrid({ searchQuery = "" }) {
   const dispatch = useDispatch();
@@ -16,7 +15,6 @@ export default function CategoryGrid({ searchQuery = "" }) {
   const loading = useSelector(selectCategoriesLoading);
   const error = useSelector(selectCategoriesError);
   const [imgErrors, setImgErrors] = useState({});
-  const [selectedTab, setSelectedTab] = useState("service");
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -31,16 +29,7 @@ export default function CategoryGrid({ searchQuery = "" }) {
   };
 
   const isSearching = Boolean(searchQuery.trim());
-
-  const displayedCategories = categories.filter((category) => {
-    const source = String(category?.source || category?.sourceLabel || "")
-      .toLowerCase()
-      .trim();
-
-    if (selectedTab === "service") return source.includes("service");
-    if (selectedTab === "event") return source.includes("event");
-    return true;
-  });
+  const displayedCategories = categories;
 
   const handleCategoryClick = (category) => {
     const source = String(category?.source || category?.sourceLabel || "")
@@ -61,37 +50,14 @@ export default function CategoryGrid({ searchQuery = "" }) {
     navigate(`/services?categoryId=${category.id}`);
   };
 
+  if (loading) return <div className="text-center py-20">Loading...</div>;
   if (error) return <div className="text-center py-20 text-red-500">{error}</div>;
 
   return (
-    <div className="min-h-screen bg-white py-14 md:pb-20 md:pt-10">
+    <div className="min-h-screen bg-white py-14 md:py-20">
       <div className="container mx-auto px-4">
-        {/* Tabs */}
-        <div className="mb-8 inline-flex items-center gap-2 rounded-lg bg-[#EFD4C2] px-2 py-1.5">
-          <button
-            onClick={() => setSelectedTab("service")}
-            className={`rounded-lg px-5 py-2.5 text-base font-medium transition-all ${
-              selectedTab === "service"
-                ? "bg-[#E97933] text-white shadow-[0_2px_8px_rgba(233,121,51,0.35)]"
-                : "text-[#5A3D2E]"
-            }`}
-          >
-            Service
-          </button>
-          <button
-            onClick={() => setSelectedTab("event")}
-            className={`rounded-lg px-5 py-2.5 text-base font-medium transition-all ${
-              selectedTab === "event"
-                ? "bg-[#E97933] text-white shadow-[0_2px_8px_rgba(233,121,51,0.35)]"
-                : "text-[#5A3D2E]"
-            }`}
-          >
-            Events
-          </button>
-        </div>
-
         {/* No results message */}
-        {displayedCategories.length === 0 && isSearching && !loading && (
+        {categories.length === 0 && isSearching && (
           <div className="text-center py-20">
             <p className="text-gray-500 text-lg">
               No categories found matching &quot;{searchQuery}&quot;
@@ -102,17 +68,8 @@ export default function CategoryGrid({ searchQuery = "" }) {
           </div>
         )}
 
-        {/* Skeleton Loading State */}
-        {loading && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4 items-stretch">
-            {Array.from({ length: 8 }).map((_, index) => (
-              <SkeletonCategoryCard key={index} />
-            ))}
-          </div>
-        )}
-
         {/* Responsive Grid Layout */}
-        {!loading && displayedCategories.length > 0 && (
+        {displayedCategories.length > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4 items-stretch">
             {displayedCategories.map((category) => (
               <div
@@ -142,7 +99,7 @@ export default function CategoryGrid({ searchQuery = "" }) {
                   <h3 className="text-base font-medium text-gray-800 text-center uppercase tracking-tight leading-tight">
                     {category.title}
                   </h3>
-                  <p className="text-[14px] text-gray-500 font-medium mt-1 uppercase ">
+                  <p className="text-[14px] text-gray-500 font-medium mt-1">
                     {category.type || category.source || category.sourceLabel || ""}
                   </p>
                 </div>

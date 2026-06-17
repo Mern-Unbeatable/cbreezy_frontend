@@ -9,9 +9,7 @@ lerna-debug.log*
 
 # Dependencies
 node_modules
-dist
-dist-ssr
-*.local
+
 
 # Editor directories and files
 .vscode/*
@@ -28,3 +26,6 @@ dist-ssr
 .env
 .env.local
 .env.production
+branch_structure.json
+temp_auto_push.bat
+temp_interactive_push.bat

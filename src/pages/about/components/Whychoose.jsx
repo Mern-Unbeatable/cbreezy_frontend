@@ -1,92 +1,84 @@
+import {  MapPin, ShieldOff, DollarSign, ChartNoAxesCombined, Handshake, ShieldCheck } from "lucide-react";
+
 export default function WhyChoose() {
+  const features = [
+    {
+      icon: <ChartNoAxesCombined size={16} className="text-[#E97C35]" />,
+      title: "Empowerment –",
+      desc: "We give individuals and small platforms to there skills on their own terms.",
+    },
+    {
+    icon: <Handshake  size={16} className="text-[#E97C35]" />,
+      title: "Local Connections:",
+      desc: "Build lasting relationships with clients in your own community.",
+    },
+    {
+      icon: <ShieldCheck  size={16} className="text-[#E97C35]" />,
+      title: "No Middleman:",
+      desc: "Connect to connect customers and keep out of your earn.",
+    },
+    {
+      icon: <DollarSign size={16} className="text-[#E97C35]" />,
+      title: "Simple & Affordable:",
+      desc: "processed afterway to advertise your event.",
+    },
+  ];
+
   return (
-    <section className="w-full bg-white py-12 sm:py-16 px-4 sm:px-6 md:px-10 lg:px-16">
-      <div className="mx-auto max-w-6xl">
-        <div className="text-center mb-10">
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
-            Our Mission
-          </h2>
-          <p className="mt-4 text-gray-600 max-w-3xl mx-auto text-left sm:text-center">
-            We believe everyone has a skill, passion, or hustle that deserves to
-            be seen. Whether you are a seasoned professional, a self-taught
-            expert, or just getting started, SideGurus.com empowers individuals
-            and small businesses to showcase their services and connect with
-            clients in their local communities.
-          </p>
-          <p className="mt-4 text-gray-600 max-w-3xl mx-auto text-left sm:text-center">
-            Our platform makes it easier than ever to turn side hustles into
-            thriving businesses. From hairstylists and tutors to personal
-            trainers, handymen, and creatives, SideGurus.com is where local
-            talent shines.
+    <div className="w-full bg-[#FDF2EB]  py-10 sm:py-0 sm:pt-16 px-4 sm:px-6 md:px-10 lg:px-16">
+      <div className="mx-auto max-w-7xl flex flex-col md:flex-row items-start md:items-center justify-between gap-10 lg:gap-14">
+
+        {/* LEFT: Text Content */}
+        <div className="flex-1 min-w-0 md:max-w-[48%]">
+          {/* Heading */}
+          <h2 className="text-4xl lg:text-[40px] font-bold text-gray-900 leading-tight mb-0.5">Why Choose</h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-[#E97C35] leading-tight mb-7">SideGurus.com?</h2>
+
+          {/* Feature list */}
+          <div className="space-y-3.5 mb-6">
+            {features.map((f, i) => (
+              <div key={i} className="flex items-start gap-3">
+                {/* Icon box */}
+                <div className="w-8 h-8 rounded-md bg-[#F8D6C0] flex items-center justify-center shrink-0 mt-1 border border-orange-200">
+                  {f.icon}
+                </div>
+                <p className="text-[15px] text-gray-700 leading-snug">
+                  <span className="font-semibold text-[#0C0C0C]">{f.title}</span>{" "}
+                  {f.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {/* Footer text */}
+          <p className="text-base text-gray-700 leading-relaxed">
+            At SideGurus.com,we believe that i valuabling your sellt
+            <br />
+            income-one gig at a time!
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch auto-rows-fr">
-          <div className="bg-[#FDF2EB] p-4 md:p-6 rounded-lg shadow-sm h-full min-h-65 flex flex-col">
-            <h4 className="text-xl font-semibold text-gray-900">What We Do</h4>
-            <p className="mt-3 text-gray-600 flex-1">
-              SideGurus.com is a curated local services platform designed for
-              modern convenience and elevated service experiences. We connect
-              community professionals with clients who value quality,
-              reliability, and convenience. We connect clients with
-              professionals across all categories. Every provider on
-              SideGurus.com is positioned to be discovered and booked with
-              confidence.
-            </p>
+        {/* RIGHT: Two overlapping images */}
+        <div className="relative shrink-0 w-full md:w-107.5 h-62.5 lg:h-67.5 hidden md:block">
+          {/* Back image (top-right) */}
+          <div className="absolute top-0 right-0 w-75 lg:w-80 h-51.25 lg:h-65 rounded-xl overflow-hidden shadow-md z-0 border-4 border-white">
+            <img
+              src="https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=500&h=340&fit=crop"
+              alt="Event"
+              className="w-full h-full object-cover"
+            />
           </div>
-
-          <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm border h-full min-h-65 flex flex-col">
-            <h4 className="text-xl font-semibold text-gray-900">Our Vision</h4>
-            <p className="mt-3 text-gray-600 flex-1">
-              We envision a world where independent professionals operate with
-              the same visibility, credibility, and ease as large, established
-              brands. A world where local talent is not only supported but
-              elevated.
-            </p>
-          </div>
-
-          <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm border h-full min-h-65 flex flex-col">
-            <h4 className="text-xl font-semibold text-gray-900">
-              Why We Exist
-            </h4>
-            <p className="mt-3 text-gray-600 flex-1">
-              The local services industry is fragmented, inconsistent, and often
-              difficult to navigate. Quality talent remains hidden, while
-              clients struggle to find reliable professionals. We are changing
-              that. SideGurus.com was built to bring structure, visibility, and
-              trust to local services — creating a marketplace where quality
-              stands out and opportunity is accessible.
-            </p>
-          </div>
-
-          <div className="bg-[#FDF2EB] p-4 md:p-6 rounded-lg shadow-sm h-full min-h-65 flex flex-col">
-            <h4 className="text-xl font-semibold text-gray-900">
-              Join the Marketplace
-            </h4>
-            <p className="mt-3 text-gray-600 flex-1">
-              Whether you are a client seeking trusted professionals or a
-              provider ready to grow your business, SideGurus.com is your
-              gateway to a more connected, efficient, and elevated local
-              economy.
-            </p>
-
-            <div className="mt-4 flex justify-between gap-3">
-              <a
-                href="/signup"
-                className="flex px-5 py-2 bg-orange-500 text-white rounded-md shadow-sm hover:bg-orange-600"
-              >
-                Join as Provider
-              </a>
-              <a
-                href="/services"
-                className="flex px-5 py-2 border border-gray-400 rounded-md text-gray-700 hover:bg-gray-50"
-              >
-                Find Services
-              </a>
-            </div>
+          {/* Front image (bottom-left) */}
+          <div className="absolute -bottom-6 left-0 w-40 lg:w-44 h-28 lg:h-40 rounded-xl overflow-hidden shadow-lg z-10 border-4 border-white">
+            <img
+              src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400&h=300&fit=crop"
+              alt="Team"
+              className="w-full h-full object-cover"
+            />
           </div>
         </div>
+
       </div>
-    </section>
+    </div>
   );
 }

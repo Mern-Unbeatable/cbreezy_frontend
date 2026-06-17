@@ -3,7 +3,7 @@ export default function HowItWorks() {
     <section className="bg-white py-12 sm:py-16 md:py-20  px-4 sm:px-6 lg:px-8 font-sans overflow-hidden">
       <div className="max-w-7xl mx-auto">
         <div className="text-left md:text-center mb-12 sm:mb-16 md:mb-20">
-          <h2 className="text-2xl md:text-[40px] font-extrabold font-[Poppins] text-black mb-3 sm:mb-4 md:mb-6">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-black mb-3 sm:mb-4 md:mb-6">
             How it works
           </h2>
           <p className="text-gray-600 text-base sm:text-lg md:text-xl">

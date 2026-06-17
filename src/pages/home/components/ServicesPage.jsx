@@ -4,17 +4,12 @@ import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import {
-  clearHomeCities,
-  fetchHomeCitiesByRegion,
   fetchHomeCategoriesByTab,
   fetchHomeCountries,
   fetchHomeCountriesWithRegions,
   selectHomeCategories,
   selectHomeCategoryError,
   selectHomeCategoryLoading,
-  selectHomeCities,
-  selectHomeCityError,
-  selectHomeCityLoading,
   selectHomeCountries,
   selectHomeCountriesWithRegions,
   selectHomeGeoError,
@@ -29,18 +24,14 @@ export default function ServicesPage() {
   const categories = useSelector(selectHomeCategories);
   const countries = useSelector(selectHomeCountries);
   const countriesWithRegions = useSelector(selectHomeCountriesWithRegions);
-  const cities = useSelector(selectHomeCities);
   const categoryLoading = useSelector(selectHomeCategoryLoading);
   const geoLoading = useSelector(selectHomeGeoLoading);
-  const cityLoading = useSelector(selectHomeCityLoading);
   const categoryError = useSelector(selectHomeCategoryError);
   const geoError = useSelector(selectHomeGeoError);
-  const cityError = useSelector(selectHomeCityError);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedSubcategory, setSelectedSubcategory] = useState("");
   const [selectedCountry, setSelectedCountry] = useState("");
   const [selectedLocation, setSelectedLocation] = useState("");
-  const [selectedCity, setSelectedCity] = useState("");
 
   const selectedCategoryObj = useMemo(
     () => categories.find((cat) => String(cat.id) === String(selectedCategory)),
@@ -71,12 +62,6 @@ export default function ServicesPage() {
     return matchedCountry?.regions || [];
   }, [countriesWithRegions, selectedCountry, selectedCountryObj?.name]);
 
-  const selectedLocationObj = useMemo(() => {
-    return locationOptions.find((item) => String(item.id) === String(selectedLocation));
-  }, [locationOptions, selectedLocation]);
-
-  const cityOptions = useMemo(() => cities, [cities]);
-
   const displayCategories = useMemo(() => categories.slice(0, 7), [categories]);
   const topRow = useMemo(() => displayCategories.slice(0, 3), [displayCategories]);
   const bottomRow = useMemo(() => displayCategories.slice(3, 7), [displayCategories]);
@@ -105,36 +90,19 @@ export default function ServicesPage() {
   }, [geoError]);
 
   useEffect(() => {
-    if (cityError) {
-      toast.error(cityError);
-    }
-  }, [cityError]);
-
-  useEffect(() => {
     setSelectedLocation("");
-    setSelectedCity("");
   }, [selectedCountry]);
 
   useEffect(() => {
     setSelectedSubcategory("");
   }, [selectedCategory]);
 
-  useEffect(() => {
-    if (!selectedLocation) {
-      dispatch(clearHomeCities());
-      setSelectedCity("");
-      return;
-    }
-
-    dispatch(fetchHomeCitiesByRegion(selectedLocation));
-    setSelectedCity("");
-  }, [dispatch, selectedLocation]);
-
   const handleSearch = () => {
     const params = new URLSearchParams();
     const selectedSubcategoryObj =
       subcategoryOptions.find((item) => String(item.id) === String(selectedSubcategory)) || null;
-    const selectedCityObj = cityOptions.find((item) => String(item.id) === String(selectedCity)) || null;
+    const selectedLocationObj =
+      locationOptions.find((item) => String(item.id) === String(selectedLocation)) || null;
 
     if (selectedCategory) params.set("categoryId", selectedCategory);
     if (activeTab === "Service" && selectedSubcategory) {
@@ -142,7 +110,6 @@ export default function ServicesPage() {
     }
     if (selectedCountry) params.set("countryId", selectedCountry);
     if (selectedLocation) params.set("regionId", selectedLocation);
-    if (selectedCity) params.set("cityId", selectedCity);
 
     if (selectedCategoryObj?.name) params.set("category", selectedCategoryObj.name);
     if (activeTab === "Service" && selectedSubcategoryObj?.name) {
@@ -150,7 +117,6 @@ export default function ServicesPage() {
     }
     if (selectedCountryObj?.name) params.set("country", selectedCountryObj.name);
     if (selectedLocationObj?.name) params.set("location", selectedLocationObj.name);
-    if (selectedCityObj?.name) params.set("city", selectedCityObj.name);
 
     const targetPath = activeTab === "Service" ? "/services" : "/events";
     const query = params.toString();
@@ -173,7 +139,7 @@ export default function ServicesPage() {
     <div className="container mx-auto min-h-screen bg-white">
       {/* ── Hero Section ── */}
       <section className="text-center pb-10  pt-14 md:pt-20 px-4 sm:px-6">
-        <h1 className="text-2xl md:text-[40px] font-black text-[#0C0C0C] text-start sm:text-center  mb-3  font-[Poppins] md:max-w-4xl mx-auto leading-tight">
+        <h1 className="text-2xl sm:text-4xl md:text-5xl font-black text-[#0C0C0C] text-start sm:text-center  mb-3  font-[Poppins] md:max-w-3xl mx-auto leading-tight">
           Find Services & Events Near You Instantly
         </h1>
         <p className="text-gray-600 text-sm sm:text-base  md:text-lg  mb-6 md:mb-8 max-w-3xl  text-start sm:text-center mx-auto leading-relaxed">
@@ -206,7 +172,7 @@ export default function ServicesPage() {
             <div className="bg-[#F8D7C4] rounded-b-xl rounded-tr-xl p-4 sm:p-5">
               <div
                 className={`grid grid-cols-1 gap-3 items-center  ${
-                  activeTab === "Service" ? "md:grid-cols-6" : "md:grid-cols-5"
+                  activeTab === "Service" ? "md:grid-cols-5" : "md:grid-cols-4"
                 }`}
               >
                 {/* Dropdowns */}
@@ -294,31 +260,6 @@ export default function ServicesPage() {
                   </div>
                 </div>
 
-                <div className="relative w-full">
-                  <select
-                    value={selectedCity}
-                    onChange={(e) => setSelectedCity(e.target.value)}
-                    disabled={!selectedLocation || cityLoading || cityOptions.length === 0}
-                    className="w-full appearance-none bg-white border-none rounded-md px-4 py-2.5 pr-10 text-sm text-gray-600 focus:outline-none cursor-pointer disabled:cursor-not-allowed disabled:opacity-70"
-                  >
-                    <option value="">
-                      {!selectedLocation
-                        ? "Select location first"
-                        : cityLoading
-                          ? "Loading city..."
-                          : "City"}
-                    </option>
-                    {cityOptions.map((city) => (
-                      <option key={city.id} value={city.id}>
-                        {city.name}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-                    <ChevronDown className="w-4 h-4 text-gray-800 stroke-[3px]" />
-                  </div>
-                </div>
-
                 {/* Search Button */}
                 <button
                   onClick={handleSearch}
@@ -369,12 +310,12 @@ export default function ServicesPage() {
             {/* Column 1: Title + CTA */}
             <div className="flex flex-col  pr-4 ">
               <p className="text-[#E8804A] text-13px font-bold mb-6 tracking-wide font-[Poppins]">
-                {/* --- Find what interests you the most --- */}
+                --- Find what interests you the most ---
               </p>
 
               <h2 className="text-2xl md:text-4xl font-semibold text-gray-950 leading-tight mb-8 font-[Poppins]">
-                {/* Browse From
-                Top Categories */}
+                Browse From
+                Top Categories
               </h2>
 
               <Link to='/categories' className="hidden lg:inline-flex bg-[#E97C35]  active:bg-[#c06637] text-white text-sm font-bold px-6 py-3 rounded-lg transition-colors shadow-md hover:shadow-lg w-full md:w-auto items-center justify-center">

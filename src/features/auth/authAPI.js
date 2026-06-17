@@ -35,18 +35,6 @@ export const fetchRegionsByCountryAPI = async (countryId) => {
     .filter((item) => item.name);
 };
 
-export const fetchCitiesByRegionAPI = async (regionId) => {
-  const response = await apiClient.get(LOCATION_ENDPOINTS.CITIES_BY_REGION(regionId));
-  const list = normalizeList(response.data);
-
-  return list
-    .map((item) => ({
-      id: item?.id ?? item?.cityId ?? item?._id ?? item?.name,
-      name: item?.cityName ?? item?.name ?? item?.title,
-    }))
-    .filter((item) => item.name);
-};
-
 export const registerAPI = async (payload) => {
   const response = await apiClient.post(AUTH_ENDPOINTS.REGISTER, payload);
   return response.data;

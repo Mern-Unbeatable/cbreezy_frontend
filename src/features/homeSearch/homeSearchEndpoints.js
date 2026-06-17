@@ -3,5 +3,4 @@ export const HOME_SEARCH_ENDPOINTS = {
   EVENT_CATEGORIES: "/api/categories/event",
   COUNTRIES: "/api/locations/countries",
   COUNTRIES_WITH_REGIONS: "/api/locations/countries-with-regions",
-  REGION_CITIES: (regionId) => `/api/locations/regions/${regionId}/cities`,
 };

@@ -1,6 +1,3 @@
-import { useEffect, useState } from "react";
-import apiClient from "../../../services/apiClient";
-
 const Logo = () => (
     <div className="flex flex-col items-center mb-6 mt-1.5">
         <img src="/logo.png" alt="SideGurus.com Logo" className="h-20" />
@@ -8,45 +5,6 @@ const Logo = () => (
 );
 
 export default function PricingCards() {
-    const [plans, setPlans] = useState([]);
-    const [meta, setMeta] = useState(null);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        let mounted = true;
-        const fetchPlans = async () => {
-            try {
-                const res = await apiClient.get("/api/pricing-plans");
-                const payload = res?.data;
-                if (mounted && payload?.success) {
-                    setPlans(Array.isArray(payload.data) ? payload.data : []);
-                    setMeta(payload.meta || null);
-                }
-            } catch (err) {
-                console.error("Failed to load pricing plans", err);
-            } finally {
-                if (mounted) setLoading(false);
-            }
-        };
-
-        fetchPlans();
-        return () => { mounted = false };
-    }, []);
-
-    const currency = (meta?.stripeCurrency || "usd").toUpperCase();
-    const fmt = (value) => {
-        try {
-            const formatted = new Intl.NumberFormat(undefined, { style: "currency", currency }).format(value);
-            // If Intl produces a prefixed currency like "US$" or "CA$", remove the country letters
-            return formatted.replace(/[A-Z]{1,3}(?=\$)/, "");
-        } catch (e) {
-            return `$${value}`;
-        }
-    };
-
-    const introPlan = plans.find((p) => p.isIntroductory) || plans[0];
-    const standardPlan = plans.find((p) => !p.isIntroductory) || plans[1] || plans[0];
-
     return (
         <div className="w-full min-h-screen flex items-center justify-center py-14 sm:py-16 md:py-20 px-4 sm:px-6 md:px-10 bg-[#FDF2EB]">
             <div className="w-full container mx-auto flex flex-col items-center">
@@ -73,7 +31,7 @@ export default function PricingCards() {
 
                             <div className="w-full mt-auto flex flex-col gap-3.5">
                                 <button className="w-full py-3.5 rounded-xl text-white text-sm font-semibold bg-[#004C48] shadow hover:shadow-lg transition-shadow">
-                                    {loading ? "..." : (introPlan ? `${fmt(introPlan.price)} ${introPlan.title || 'Introductory price'}` : "—")}
+                                    $0.99 Introductory price
                                 </button>
 
                                 <button className="w-full py-3 rounded-xl text-sm font-semibold tracking-widest border-2 bg-white hover:bg-gray-50 transition-colors border-[#004C48] text-[#004C48]">
@@ -103,7 +61,7 @@ export default function PricingCards() {
 
                             <div className="w-full mt-auto flex flex-col gap-3.5">
                                 <button className="w-full py-3.5 rounded-xl text-white text-sm font-semibold bg-[#E97C35] shadow hover:shadow-lg transition-shadow">
-                                    {loading ? "..." : (standardPlan ? `${fmt(standardPlan.price)} ${standardPlan.title || 'Standard Price'}` : "—")}
+                                    $2.99 Standard Price
                                 </button>
 
                                 <button className="w-full py-3 rounded-xl text-sm font-semibold tracking-widest border-2 bg-white hover:bg-gray-50 transition-colors border-[#E97C35] text-[#E97C35]">

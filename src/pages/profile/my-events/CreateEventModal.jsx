@@ -17,10 +17,6 @@ import {
   selectCountriesLoading,
   selectRegions,
   selectRegionsLoading,
-  fetchCitiesByRegion,
-  selectCities,
-  selectCitiesLoading,
-  selectCitiesError,
 } from "../../../features/auth/authSlice";
 
 export default function CreateEventModal({ isOpen, onClose }) {
@@ -32,9 +28,6 @@ export default function CreateEventModal({ isOpen, onClose }) {
   const countriesLoading = useSelector(selectCountriesLoading);
   const regions = useSelector(selectRegions);
   const regionsLoading = useSelector(selectRegionsLoading);
-  const cities = useSelector(selectCities);
-  const citiesLoading = useSelector(selectCitiesLoading);
-  const citiesError = useSelector(selectCitiesError);
 
   const [isPricingOpen, setIsPricingOpen] = useState(false);
   const [createdEventId, setCreatedEventId] = useState("");
@@ -45,7 +38,6 @@ export default function CreateEventModal({ isOpen, onClose }) {
     categoryId: "",
     countryId: "",
     regionId: "",
-    cityId: "",
     location: "",
     eventStart: "",
     eventEnd: "",
@@ -72,12 +64,6 @@ export default function CreateEventModal({ isOpen, onClose }) {
     }
   }, [dispatch, form.countryId]);
 
-  useEffect(() => {
-    if (form.regionId) {
-      dispatch(fetchCitiesByRegion(form.regionId));
-    }
-  }, [dispatch, form.regionId]);
-
   const resetModalState = () => {
     setForm({
       title: "",
@@ -86,7 +72,6 @@ export default function CreateEventModal({ isOpen, onClose }) {
       categoryId: "",
       countryId: "",
       regionId: "",
-      cityId: "",
       location: "",
       eventStart: "",
       eventEnd: "",
@@ -104,7 +89,7 @@ export default function CreateEventModal({ isOpen, onClose }) {
   const handleInputChange = (field, value) => {
     setForm((prev) => {
       if (field === "countryId") {
-        return { ...prev, countryId: value, regionId: "", cityId: "" };
+        return { ...prev, countryId: value, regionId: "" };
       }
 
       return { ...prev, [field]: value };
@@ -218,7 +203,6 @@ export default function CreateEventModal({ isOpen, onClose }) {
     payload.append("categoryId", form.categoryId);
     payload.append("countryId", form.countryId);
     payload.append("regionId", form.regionId);
-    payload.append("cityId", form.cityId);
     payload.append("location", form.location.trim());
     payload.append("address", form.location.trim());
     payload.append("eventStart", new Date(form.eventStart).toISOString());
@@ -283,7 +267,7 @@ export default function CreateEventModal({ isOpen, onClose }) {
               <div>
                 <h3 className="text-base text-[#0C0C0C] font-semibold mb-3">Event Details</h3>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                   <div>
                     <label className="block text-base text-[#0C0C0C] mb-1">Event Title</label>
                     <input
@@ -353,7 +337,7 @@ export default function CreateEventModal({ isOpen, onClose }) {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-                  <div className="sm:col-span-1">
+                  <div>
                     <label className="block text-base text-[#0C0C0C] mb-1">Region</label>
                     <select
                       value={form.regionId}
@@ -369,25 +353,7 @@ export default function CreateEventModal({ isOpen, onClose }) {
                       ))}
                     </select>
                   </div>
-
-                  <div className="sm:col-span-1">
-                    <label className="block text-base text-[#0C0C0C] mb-1">City</label>
-                    <select
-                      value={form.cityId}
-                      onChange={(e) => handleInputChange("cityId", e.target.value)}
-                      disabled={!form.regionId || citiesLoading}
-                      className="w-full border border-gray-200 rounded px-3 py-2 text-base focus:outline-none focus:border-orange-300 bg-[#F8D6C0] text-[#373737] disabled:opacity-70"
-                    >
-                      <option value="">Select city</option>
-                      {cities.map((city) => (
-                        <option key={city.id} value={city.id}>
-                          {city.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="sm:col-span-1">
+                  <div>
                     <label className="block text-base text-[#0C0C0C] mb-1">Location</label>
                     <input
                       type="text"

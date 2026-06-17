@@ -19,10 +19,6 @@ import {
   selectCountriesLoading,
   selectRegions,
   selectRegionsLoading,
-  fetchCitiesByRegion,
-  selectCities,
-  selectCitiesLoading,
-  selectCitiesError,
 } from "../../../features/auth/authSlice";
 
 export default function CreateServiceModal({ isOpen, onClose }) {
@@ -36,9 +32,6 @@ export default function CreateServiceModal({ isOpen, onClose }) {
   const countriesLoading = useSelector(selectCountriesLoading);
   const regions = useSelector(selectRegions);
   const regionsLoading = useSelector(selectRegionsLoading);
-  const cities = useSelector(selectCities);
-  const citiesLoading = useSelector(selectCitiesLoading);
-  const citiesError = useSelector(selectCitiesError);
 
   const [createdServiceId, setCreatedServiceId] = useState("");
   const [form, setForm] = useState({
@@ -49,7 +42,6 @@ export default function CreateServiceModal({ isOpen, onClose }) {
     subCategoryId: "",
     countryId: "",
     regionId: "",
-    cityId: "",
     address: "",
     contactEmail: "",
     contactPhone: "",
@@ -71,7 +63,6 @@ export default function CreateServiceModal({ isOpen, onClose }) {
       subCategoryId: "",
       countryId: "",
       regionId: "",
-      cityId: "",
       address: "",
       contactEmail: "",
       contactPhone: "",
@@ -107,12 +98,6 @@ export default function CreateServiceModal({ isOpen, onClose }) {
     }
   }, [dispatch, form.countryId]);
 
-  useEffect(() => {
-    if (form.regionId) {
-      dispatch(fetchCitiesByRegion(form.regionId));
-    }
-  }, [dispatch, form.regionId]);
-
   const handleCloseCreateModal = () => {
     setIsPricingOpen(false);
     setCreatedServiceId("");
@@ -139,11 +124,7 @@ export default function CreateServiceModal({ isOpen, onClose }) {
       }
 
       if (field === "countryId") {
-        return { ...prev, countryId: value, regionId: "", cityId: "" };
-      }
-
-      if (field === "regionId") {
-        return { ...prev, regionId: value, cityId: "" };
+        return { ...prev, countryId: value, regionId: "" };
       }
 
       return { ...prev, [field]: value };
@@ -229,7 +210,6 @@ export default function CreateServiceModal({ isOpen, onClose }) {
     payload.append("subCategoryId", form.subCategoryId);
     payload.append("countryId", form.countryId);
     payload.append("regionId", form.regionId);
-    payload.append("cityId", form.cityId);
     payload.append("address", form.address.trim());
     payload.append("contactEmail", form.contactEmail.trim());
     payload.append("contactPhone", form.contactPhone.trim());
@@ -355,7 +335,7 @@ export default function CreateServiceModal({ isOpen, onClose }) {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                   <div>
                     <label className="block text-base text-[#0C0C0C] mb-1">Country</label>
                     <select
@@ -387,23 +367,6 @@ export default function CreateServiceModal({ isOpen, onClose }) {
                         </option>
                       ))}
                     </select>
-                  </div>
-                  <div>
-                    <label className="block text-base text-[#0C0C0C] mb-1">City</label>
-                    <select
-                      value={form.cityId}
-                      onChange={(e) => handleInputChange("cityId", e.target.value)}
-                      disabled={!form.regionId || citiesLoading}
-                      className="w-full border border-gray-200 rounded px-3 py-2 text-base focus:outline-none focus:border-orange-300 bg-[#F8D6C0] text-[#373737] disabled:opacity-70"
-                    >
-                      <option value="">Select city</option>
-                      {cities.map((city) => (
-                        <option key={city.id} value={city.id}>
-                          {city.name}
-                        </option>
-                      ))}
-                    </select>
-                    {citiesError && <p className="text-xs text-red-500 mt-1">Failed to load cities</p>}
                   </div>
                 </div>
 
