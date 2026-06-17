@@ -61,7 +61,7 @@ export default function ServicePurchaseSuccess() {
     (hasUsableInitialSessionId ? initialCheckoutSessionId : "") ||
     (sameServiceContext ? String(savedContext?.checkoutSessionId || "") : "");
 
-  const missingParams = !hasConfirmedSuccess && (!serviceId || !resolvedPlanId || !resolvedCheckoutSessionId);
+  const missingParams = !hasConfirmedSuccess && (!serviceId || !resolvedPlanId);
   const callbackLoading = isRenewFlow ? renewConfirmLoading : purchaseConfirmLoading;
   const callbackError = isRenewFlow ? renewConfirmError : purchaseConfirmError;
 
@@ -106,7 +106,7 @@ export default function ServicePurchaseSuccess() {
       <div className="min-h-screen bg-[#f3f3f3] flex items-center justify-center px-4">
         <div className="text-center max-w-lg w-full">
           <h1 className="text-3xl font-bold text-gray-900 mb-3">Invalid Payment Callback</h1>
-          <p className="text-gray-600 mb-6">Missing serviceId, planId or checkoutSessionId in callback URL.</p>
+          <p className="text-gray-600 mb-6">Missing serviceId or planId in callback URL.</p>
           <button
             onClick={() => navigate("/profile/my-services")}
             className="px-6 py-2.5 rounded bg-[#E97C35] text-white font-semibold"

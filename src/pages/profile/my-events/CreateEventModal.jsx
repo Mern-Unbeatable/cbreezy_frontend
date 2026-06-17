@@ -5,7 +5,10 @@ import { toast } from "react-toastify";
 import PricingModal from "./PricingModal";
 import {
   createEvent,
+  updateMyEvent,
   fetchEventCategories,
+  fetchEventPricingPlansEligibility,
+  purchaseEvent,
   selectCreateEventLoading,
   selectEventCategories,
   selectEventCategoriesLoading,
@@ -13,14 +16,20 @@ import {
 import {
   fetchCountries,
   fetchRegionsByCountry,
+  fetchCitiesByRegion,
+  clearCities,
   selectCountries,
   selectCountriesLoading,
   selectRegions,
   selectRegionsLoading,
+  selectCities,
+  selectCitiesLoading,
 } from "../../../features/auth/authSlice";
 
-export default function CreateEventModal({ isOpen, onClose }) {
+export default function CreateEventModal({ isOpen, onClose, editEvent = null, onSaved }) {
   const dispatch = useDispatch();
+  const isEditMode = Boolean(editEvent?.id);
+  const [updateLoading, setUpdateLoading] = useState(false);
   const createLoading = useSelector(selectCreateEventLoading);
   const categories = useSelector(selectEventCategories);
   const categoriesLoading = useSelector(selectEventCategoriesLoading);
@@ -28,9 +37,14 @@ export default function CreateEventModal({ isOpen, onClose }) {
   const countriesLoading = useSelector(selectCountriesLoading);
   const regions = useSelector(selectRegions);
   const regionsLoading = useSelector(selectRegionsLoading);
+  const cities = useSelector(selectCities);
+  const citiesLoading = useSelector(selectCitiesLoading);
 
   const [isPricingOpen, setIsPricingOpen] = useState(false);
   const [createdEventId, setCreatedEventId] = useState("");
+  const [pricingForcePlanId, setPricingForcePlanId] = useState("");
+  const [pricingLockSelection, setPricingLockSelection] = useState(false);
+  const [pricingHideFree, setPricingHideFree] = useState(false);
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -38,6 +52,7 @@ export default function CreateEventModal({ isOpen, onClose }) {
     categoryId: "",
     countryId: "",
     regionId: "",
+    cityId: "",
     location: "",
     eventStart: "",
     eventEnd: "",
@@ -58,11 +73,46 @@ export default function CreateEventModal({ isOpen, onClose }) {
     dispatch(fetchCountries());
   }, [dispatch, isOpen]);
 
+  // Pre-fill form in edit mode
+  useEffect(() => {
+    if (!isEditMode || !editEvent) return;
+    const parsePrice = (v) => String(v || "").replace(/[^0-9.]/g, "");
+    setForm({
+      title: editEvent.title || "",
+      description: editEvent.description || "",
+      price: parsePrice(editEvent.price),
+      categoryId: editEvent.categoryId || "",
+      countryId: editEvent.countryId || "",
+      regionId: editEvent.regionId || "",
+      cityId: editEvent.cityId || "",
+      location: editEvent.location || "",
+      eventStart: editEvent.eventStart || "",
+      eventEnd: editEvent.eventEnd || "",
+      email: editEvent.contactEmail || editEvent.email || "",
+      phone: editEvent.contactPhone || editEvent.phone || "",
+      facebook: editEvent.facebookUrl || editEvent.facebook || "",
+      instagram: editEvent.instagramUrl || editEvent.instagram || "",
+    });
+    setEventImageFiles([]);
+    setEventImagePreviews([]);
+    setGalleryImageFiles([]);
+    setGalleryImagePreviews([]);
+  }, [editEvent, isEditMode]);
+
   useEffect(() => {
     if (form.countryId) {
       dispatch(fetchRegionsByCountry(form.countryId));
     }
   }, [dispatch, form.countryId]);
+
+  useEffect(() => {
+    if (!form.regionId) {
+      dispatch(clearCities());
+      return;
+    }
+
+    dispatch(fetchCitiesByRegion(form.regionId));
+  }, [dispatch, form.regionId]);
 
   const resetModalState = () => {
     setForm({
@@ -72,6 +122,7 @@ export default function CreateEventModal({ isOpen, onClose }) {
       categoryId: "",
       countryId: "",
       regionId: "",
+      cityId: "",
       location: "",
       eventStart: "",
       eventEnd: "",
@@ -89,7 +140,11 @@ export default function CreateEventModal({ isOpen, onClose }) {
   const handleInputChange = (field, value) => {
     setForm((prev) => {
       if (field === "countryId") {
-        return { ...prev, countryId: value, regionId: "" };
+        return { ...prev, countryId: value, regionId: "", cityId: "" };
+      }
+
+      if (field === "regionId") {
+        return { ...prev, regionId: value, cityId: "" };
       }
 
       return { ...prev, [field]: value };
@@ -166,6 +221,46 @@ export default function CreateEventModal({ isOpen, onClose }) {
   };
 
   const handleSubmitAndContinue = async () => {
+    if (!String(form.title || "").trim()) {
+      toast.error("Event title is required");
+      return;
+    }
+
+    // ── EDIT MODE ──
+    if (isEditMode) {
+      const payload = new FormData();
+      payload.append("title", form.title.trim());
+      payload.append("description", form.description.trim());
+      if (form.price) payload.append("price", String(form.price).trim());
+      if (form.categoryId) payload.append("categoryId", form.categoryId);
+      if (form.countryId) payload.append("countryId", form.countryId);
+      if (form.regionId) payload.append("regionId", form.regionId);
+      if (form.cityId) payload.append("cityId", form.cityId);
+      if (form.location.trim()) { payload.append("location", form.location.trim()); payload.append("address", form.location.trim()); }
+      if (form.eventStart) payload.append("eventStart", new Date(form.eventStart).toISOString());
+      if (form.eventEnd) payload.append("eventEnd", new Date(form.eventEnd).toISOString());
+      if (form.email.trim()) { payload.append("email", form.email.trim()); payload.append("contactEmail", form.email.trim()); }
+      if (form.phone.trim()) { payload.append("phone", form.phone.trim()); payload.append("contactPhone", form.phone.trim()); }
+      if (form.facebook.trim()) { payload.append("facebook", form.facebook.trim()); payload.append("facebookUrl", form.facebook.trim()); }
+      if (form.instagram.trim()) { payload.append("instagram", form.instagram.trim()); payload.append("instagramUrl", form.instagram.trim()); }
+      eventImageFiles.forEach((file) => payload.append("eventImages", file));
+      galleryImageFiles.forEach((file) => payload.append("eventGallery", file));
+
+      setUpdateLoading(true);
+      try {
+        await dispatch(updateMyEvent({ eventId: editEvent.id, payload })).unwrap();
+        toast.success("Event updated successfully");
+        if (onSaved) onSaved();
+        onClose();
+      } catch (error) {
+        toast.error(error || "Failed to update event");
+      } finally {
+        setUpdateLoading(false);
+      }
+      return;
+    }
+
+    // ── CREATE MODE ──
     const required = [
       "title",
       "description",
@@ -173,6 +268,7 @@ export default function CreateEventModal({ isOpen, onClose }) {
       "categoryId",
       "countryId",
       "regionId",
+      "cityId",
       "location",
       "eventStart",
       "eventEnd",
@@ -203,6 +299,7 @@ export default function CreateEventModal({ isOpen, onClose }) {
     payload.append("categoryId", form.categoryId);
     payload.append("countryId", form.countryId);
     payload.append("regionId", form.regionId);
+    payload.append("cityId", form.cityId);
     payload.append("location", form.location.trim());
     payload.append("address", form.location.trim());
     payload.append("eventStart", new Date(form.eventStart).toISOString());
@@ -231,14 +328,69 @@ export default function CreateEventModal({ isOpen, onClose }) {
         return;
       }
 
-      toast.success("Event created successfully");
-      setCreatedEventId(String(result.eventId));
-      setIsPricingOpen(true);
+      toast.info("Event created — please complete payment to activate.");
+      const eventId = String(result.eventId);
+      // fetch pricing eligibility and decide flow
+      try {
+        const eligibility = await dispatch(fetchEventPricingPlansEligibility()).unwrap();
+        const plans = eligibility?.plans || [];
+        const userLifecycle = eligibility?.userLifecycle || {};
+        const isEligibleForFree = Boolean(eligibility?.isEligibleForFree || userLifecycle?.isEligibleForFree);
+        const isEligibleForDiscount = Boolean(eligibility?.isEligibleForDiscount || userLifecycle?.isEligibleForDiscount);
+
+        if (isEligibleForFree) {
+          // auto purchase free plan
+          const freePlan = plans.find((p) => String(p?.tier || "").toLowerCase() === "free" || Number(p?.price || 0) === 0) || plans[0];
+          if (freePlan?.id) {
+            const successUrl = `${window.location.origin}/profile/my-events/purchase-success?eventId=${encodeURIComponent(
+              eventId
+            )}&planId=${encodeURIComponent(freePlan.id)}&flow=purchase&session_id={CHECKOUT_SESSION_ID}`;
+            const cancelUrl = `${window.location.origin}/profile/my-events?purchase=cancelled`;
+            const purchaseResult = await dispatch(
+              purchaseEvent({ eventId, payload: { planId: freePlan.id, successUrl, cancelUrl } })
+            ).unwrap();
+            if (purchaseResult?.checkoutUrl) {
+              window.location.assign(purchaseResult.checkoutUrl);
+              return;
+            }
+
+            toast.success("Activated for free");
+            if (onSaved) onSaved();
+            handleCloseCreateModal();
+            return;
+          }
+        }
+
+        // If discount eligibility -> show modal with Intro selected and locked, hide free
+        if (!isEligibleForFree && isEligibleForDiscount) {
+          const introId = String(eligibility?.introductoryPlanId || "") || String((plans.find((p) => p.isIntroductory) || {}).id || "");
+          setCreatedEventId(eventId);
+          setPricingForcePlanId(introId || "");
+          setPricingLockSelection(true);
+          setPricingHideFree(true);
+          setIsPricingOpen(true);
+          return;
+        }
+
+        // Neither free nor discount -> select Standard and proceed to pricing modal (locked)
+        const standardPlan = plans.find((p) => String(p?.title || "").toLowerCase().includes("standard")) || plans.find((p) => Number(p.price || 0) > 0) || plans[0];
+        const standardId = String(standardPlan?.id || "");
+        setCreatedEventId(eventId);
+        setPricingForcePlanId(standardId);
+        setPricingLockSelection(true);
+        setPricingHideFree(true);
+        setIsPricingOpen(true);
+      } catch (err) {
+        // fallback to opening pricing modal if eligibility check fails
+        setCreatedEventId(String(result.eventId));
+        setIsPricingOpen(true);
+      }
     } catch (error) {
       toast.error(error || "Failed to create event");
     }
   };
 
+  if (!isOpen && !isPricingOpen && !isEditMode) return null;
   if (!isOpen && !isPricingOpen) return null;
 
   return (
@@ -253,7 +405,7 @@ export default function CreateEventModal({ isOpen, onClose }) {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-4 sm:px-6 py-4 bg-[#F5C3A2] border-b rounded-t-lg border-gray-100">
-              <h2 className="text-lg font-semibold text-[#0C0C0C]">Create Event</h2>
+              <h2 className="text-lg font-semibold text-[#0C0C0C]">{isEditMode ? "Edit Event" : "Create Event"}</h2>
               <button
                 onClick={handleCloseCreateModal}
                 className="text-[#000000]"
@@ -354,15 +506,32 @@ export default function CreateEventModal({ isOpen, onClose }) {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-base text-[#0C0C0C] mb-1">Location</label>
-                    <input
-                      type="text"
-                      placeholder="Event location"
-                      value={form.location}
-                      onChange={(e) => handleInputChange("location", e.target.value)}
-                      className="w-full border border-gray-200 rounded px-3 py-2 focus:outline-none focus:border-orange-300 bg-[#F8D6C0]"
-                    />
+                    <label className="block text-base text-[#0C0C0C] mb-1">City</label>
+                    <select
+                      value={form.cityId}
+                      onChange={(e) => handleInputChange("cityId", e.target.value)}
+                      disabled={!form.regionId || citiesLoading}
+                      className="w-full border border-gray-200 rounded px-3 py-2 text-base focus:outline-none focus:border-orange-300 bg-[#F8D6C0] text-[#373737] disabled:opacity-70"
+                    >
+                      <option value="">Select city</option>
+                      {cities.map((city) => (
+                        <option key={city.id} value={city.id}>
+                          {city.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
+                </div>
+
+                <div className="mb-3">
+                  <label className="block text-base text-[#0C0C0C] mb-1">Location</label>
+                  <input
+                    type="text"
+                    placeholder="Event location"
+                    value={form.location}
+                    onChange={(e) => handleInputChange("location", e.target.value)}
+                    className="w-full border border-gray-200 rounded px-3 py-2 focus:outline-none focus:border-orange-300 bg-[#F8D6C0]"
+                  />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -388,7 +557,15 @@ export default function CreateEventModal({ isOpen, onClose }) {
               </div>
 
               <div>
-                <h3 className="text-base text-[#0C0C0C] font-semibold mb-3">Event Image ({eventImageFiles.length}/4)</h3>
+                <h3 className="text-base text-[#0C0C0C] font-semibold mb-3">
+                  Event Image ({eventImageFiles.length}/4){isEditMode && " — upload new to replace"}
+                </h3>
+                {isEditMode && editEvent?.image && eventImageFiles.length === 0 && (
+                  <div className="mb-2 flex items-center gap-3">
+                    <img src={editEvent.image} alt="current" className="h-16 w-16 rounded object-cover border border-gray-200" />
+                    <span className="text-xs text-gray-500">Current image</span>
+                  </div>
+                )}
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-3">
                   {eventImagePreviews.map((src, i) => (
                     <div key={i} className="relative aspect-square rounded overflow-hidden bg-gray-100">
@@ -506,14 +683,16 @@ export default function CreateEventModal({ isOpen, onClose }) {
               <div>
                 <button
                   onClick={handleSubmitAndContinue}
-                  disabled={createLoading}
+                  disabled={createLoading || updateLoading}
                   className={`w-full font-semibold px-6 py-2.5 rounded transition text-sm ${
-                    createLoading
+                    createLoading || updateLoading
                       ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                       : "bg-orange-400 text-white"
                   }`}
                 >
-                  {createLoading ? "Creating Event..." : "Submit & Continue"}
+                  {isEditMode
+                    ? updateLoading ? "Saving..." : "Save Changes"
+                    : createLoading ? "Creating Event..." : "Submit & Continue"}
                 </button>
               </div>
             </div>
@@ -526,6 +705,9 @@ export default function CreateEventModal({ isOpen, onClose }) {
         eventId={createdEventId}
         actionType="purchase"
         onClose={handleClosePricingModal}
+        forcePlanId={pricingForcePlanId}
+        lockSelection={pricingLockSelection}
+        hideFreePlans={pricingHideFree}
       />
     </>
   );

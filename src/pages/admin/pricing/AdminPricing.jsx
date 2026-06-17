@@ -508,13 +508,13 @@ const AdminPricing = () => {
         <div>
           <div className="flex items-center justify-between gap-2 sm:gap-3 mb-3 md:mb-4">
             <h1 className="text-xl sm:text-3xl leading-none font-bold text-[#111827] whitespace-nowrap">Pricing Plan</h1>
-            <button
+            {/* <button
               type="button"
               onClick={openAddPriceModal}
               className="h-9 sm:h-10 rounded-md bg-[#E97C35] px-3 sm:px-5 text-white text-xs sm:text-base font-medium hover:bg-[#cf6d2e] whitespace-nowrap shrink-0"
             >
               Add new price
-            </button>
+            </button> */}
           </div>
 
           <div className="flex flex-wrap gap-3">
@@ -532,14 +532,14 @@ const AdminPricing = () => {
                   >
                     <SquarePen className="h-3.5 w-3.5" />
                   </button>
-                  <button
+                  {/* <button
                     type="button"
                     className="text-[#E97C35] hover:text-[#dc2626]"
                     onClick={() => handleDeletePrice(plan.id)}
                     aria-label="Delete price"
                   >
                     <Trash2 className="h-4 w-4 md:h-4.5 md:w-4.5" strokeWidth={2.5} />
-                  </button>
+                  </button> */}
                 </div>
               </div>
             ))}
@@ -741,7 +741,7 @@ const AdminPricing = () => {
               >
                 <div>
                   <label className="block text-sm md:text-base text-[#1f2937] mb-1.5 md:mb-2">Tittle</label>
-                  <input type="text" placeholder="tittle" className={inputClass} value={priceTitle} onChange={(e) => setPriceTitle(e.target.value)} />
+                  <input type="text" placeholder="tittle" className={inputClass} readOnly value={priceTitle} onChange={(e) => setPriceTitle(e.target.value)} />
                 </div>
                 <div>
                   <label className="block text-xs sm:text-sm md:text-[14px] text-[#1f2937] mb-1.5 md:mb-2">Price</label>

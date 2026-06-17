@@ -17,7 +17,7 @@ import {
   selectServiceRenewLoading,
 } from "../../../features/services/servicesSlice";
 
-export default function PricingModal({ isOpen, onClose, serviceId, actionType = "purchase" }) {
+export default function PricingModal({ isOpen, onClose, serviceId, actionType = "purchase", forcePlanId = "", lockSelection = false, hideFreePlans = false }) {
   const dispatch = useDispatch();
   const plans = useSelector(selectPricingPlans);
   const pricingEligibility = useSelector(selectPricingEligibility);
@@ -48,9 +48,8 @@ export default function PricingModal({ isOpen, onClose, serviceId, actionType = 
   };
 
   const lockToLowestPlan = Boolean(pricingEligibility?.isUnderFirstThreeMonths);
-  const lowestPlanId = lockToLowestPlan
-    ? pickLowestPricePlanId(plans)
-    : "";
+  const lowestPlanId = lockToLowestPlan ? pickLowestPricePlanId(plans) : "";
+  const forcedPlanId = String(forcePlanId || "");
 
   useEffect(() => {
     onCloseRef.current = onClose;
@@ -89,14 +88,29 @@ export default function PricingModal({ isOpen, onClose, serviceId, actionType = 
       return;
     }
 
+    const visiblePlans = hideFreePlans ? plans.filter((p) => String(p?.tier || "").toLowerCase() !== "free" && Number(p?.price || 0) !== 0) : plans;
+
+    if (forcedPlanId) {
+      const exists = visiblePlans.find((p) => String(p.id) === String(forcedPlanId));
+      if (exists) {
+        setSelected(String(forcedPlanId));
+        return;
+      }
+    }
+
+    if (lockSelection && forcedPlanId) {
+      setSelected(String(forcedPlanId));
+      return;
+    }
+
     if (lockToLowestPlan && lowestPlanId) {
       setSelected(lowestPlanId);
       return;
     }
 
-    const introductory = plans.find((plan) => plan.isIntroductory);
-    setSelected(introductory?.id || plans[0]?.id || "");
-  }, [lockToLowestPlan, lowestPlanId, plans]);
+    const introductory = visiblePlans.find((plan) => plan.isIntroductory);
+    setSelected(introductory?.id || visiblePlans[0]?.id || "");
+  }, [lockToLowestPlan, lowestPlanId, plans, forcedPlanId, lockSelection, hideFreePlans]);
 
   useEffect(() => {
     if (pricingError) {
@@ -204,12 +218,16 @@ export default function PricingModal({ isOpen, onClose, serviceId, actionType = 
             <p className="text-sm text-gray-600">No active pricing plans found.</p>
           )}
 
-          {plans.map((plan, index) => {
+          {(hideFreePlans ? plans.filter((p) => String(p?.tier || "").toLowerCase() !== "free" && Number(p?.price || 0) !== 0) : plans).map((plan, index) => {
             const isSelected = selected === plan.id;
-            const isOptionLocked = lockToLowestPlan && String(plan.id) !== String(lowestPlanId);
+            const isOptionLocked = (lockToLowestPlan && String(plan.id) !== String(lowestPlanId)) || (lockSelection && Boolean(forcedPlanId) && String(plan.id) !== String(forcedPlanId));
             return (
               <label
                 key={`${plan.id}-${plan.duration}-${index}`}
+                onClick={() => {
+                  if (isOptionLocked) return;
+                  setSelected(plan.id);
+                }}
                 className={`flex items-start  gap-3 p-4 rounded-xl border-2 transition-all duration-150 ${
                   isSelected
                     ? "border-[#E97C35] bg-[#F8D6C0]"

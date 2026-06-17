@@ -4,6 +4,7 @@ import {
   fetchAccountSettingsAPI,
   fetchCountriesAPI,
   fetchRegionsByCountryAPI,
+  fetchCitiesByRegionAPI,
   forgotPasswordAPI,
   firebaseLoginAPI,
   firebaseRegisterAPI,
@@ -38,6 +39,17 @@ export const fetchRegionsByCountry = createAsyncThunk(
   async (countryId, { rejectWithValue }) => {
     try {
       return await fetchRegionsByCountryAPI(countryId);
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error));
+    }
+  }
+);
+
+export const fetchCitiesByRegion = createAsyncThunk(
+  "auth/fetchCitiesByRegion",
+  async (regionId, { rejectWithValue }) => {
+    try {
+      return await fetchCitiesByRegionAPI(regionId);
     } catch (error) {
       return rejectWithValue(getErrorMessage(error));
     }
@@ -179,8 +191,10 @@ export const changeAccountPassword = createAsyncThunk(
 const initialState = {
   countries: [],
   regions: [],
+  cities: [],
   countriesLoading: false,
   regionsLoading: false,
+  citiesLoading: false,
   loginLoading: false,
   firebaseLoginLoading: false,
   firebaseRegisterLoading: false,
@@ -195,6 +209,7 @@ const initialState = {
   changePasswordLoading: false,
   countriesError: null,
   regionsError: null,
+  citiesError: null,
   loginError: null,
   firebaseLoginError: null,
   firebaseRegisterError: null,
@@ -221,6 +236,7 @@ const authSlice = createSlice({
     clearAuthErrors: (state) => {
       state.countriesError = null;
       state.regionsError = null;
+      state.citiesError = null;
       state.loginError = null;
       state.firebaseLoginError = null;
       state.firebaseRegisterError = null;
@@ -237,6 +253,12 @@ const authSlice = createSlice({
     clearRegions: (state) => {
       state.regions = [];
       state.regionsError = null;
+      state.cities = [];
+      state.citiesError = null;
+    },
+    clearCities: (state) => {
+      state.cities = [];
+      state.citiesError = null;
     },
     setPendingRegistrationEmail: (state, action) => {
       state.pendingRegistrationEmail = action.payload || "";
@@ -277,11 +299,28 @@ const authSlice = createSlice({
       .addCase(fetchRegionsByCountry.fulfilled, (state, action) => {
         state.regionsLoading = false;
         state.regions = action.payload;
+        state.cities = [];
+        state.citiesError = null;
       })
       .addCase(fetchRegionsByCountry.rejected, (state, action) => {
         state.regionsLoading = false;
         state.regionsError = action.payload;
         state.regions = [];
+        state.cities = [];
+        state.citiesError = null;
+      })
+      .addCase(fetchCitiesByRegion.pending, (state) => {
+        state.citiesLoading = true;
+        state.citiesError = null;
+      })
+      .addCase(fetchCitiesByRegion.fulfilled, (state, action) => {
+        state.citiesLoading = false;
+        state.cities = action.payload;
+      })
+      .addCase(fetchCitiesByRegion.rejected, (state, action) => {
+        state.citiesLoading = false;
+        state.citiesError = action.payload;
+        state.cities = [];
       })
       .addCase(loginUser.pending, (state) => {
         state.loginLoading = true;
@@ -432,6 +471,7 @@ const authSlice = createSlice({
 export const {
   clearAuthErrors,
   clearRegions,
+  clearCities,
   setPendingRegistrationEmail,
   clearPendingRegistrationEmail,
   setPendingResetEmail,
@@ -441,10 +481,13 @@ export const {
 
 export const selectCountries = (state) => state.auth.countries;
 export const selectRegions = (state) => state.auth.regions;
+export const selectCities = (state) => state.auth.cities;
 export const selectCountriesLoading = (state) => state.auth.countriesLoading;
 export const selectRegionsLoading = (state) => state.auth.regionsLoading;
+export const selectCitiesLoading = (state) => state.auth.citiesLoading;
 export const selectCountriesError = (state) => state.auth.countriesError;
 export const selectRegionsError = (state) => state.auth.regionsError;
+export const selectCitiesError = (state) => state.auth.citiesError;
 export const selectLoginLoading = (state) => state.auth.loginLoading;
 export const selectFirebaseLoginLoading = (state) => state.auth.firebaseLoginLoading;
 export const selectFirebaseRegisterLoading = (state) => state.auth.firebaseRegisterLoading;
