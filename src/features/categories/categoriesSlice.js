@@ -92,7 +92,9 @@ const categoriesSlice = createSlice({
         state.loading = false;
         state.status = 'failed';
         state.error = action.payload;
-        state.items = [];
+        if (!state.items.length) {
+          state.items = [];
+        }
       });
   },
 });

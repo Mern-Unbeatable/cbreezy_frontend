@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import {
@@ -6,46 +6,59 @@ import {
   selectCategories,
   selectCategoriesLoading,
   selectCategoriesError,
+  selectCategoriesStatus,
 } from "../../../features/categories/categoriesSlice";
 import SkeletonCategoryCard from "../../../components/SkeletonCategoryCard";
+
+const getCategorySource = (category) =>
+  String(category?.source || category?.sourceLabel || category?.type || "")
+    .toLowerCase()
+    .trim();
 
 export default function CategoryGrid({ searchQuery = "" }) {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const categories = useSelector(selectCategories);
   const loading = useSelector(selectCategoriesLoading);
+  const status = useSelector(selectCategoriesStatus);
   const error = useSelector(selectCategoriesError);
   const [imgErrors, setImgErrors] = useState({});
   const [selectedTab, setSelectedTab] = useState("service");
 
+  const trimmedSearch = searchQuery.trim();
+  const isSearching = Boolean(trimmedSearch);
+
   useEffect(() => {
+    if (!isSearching && categories.length > 0 && status === "succeeded") {
+      return;
+    }
+
+    const delay = isSearching ? 350 : 0;
     const timer = setTimeout(() => {
-      dispatch(fetchCategories(searchQuery));
-    }, 350);
+      dispatch(fetchCategories(trimmedSearch));
+    }, delay);
 
     return () => clearTimeout(timer);
-  }, [dispatch, searchQuery]);
+  }, [dispatch, trimmedSearch, isSearching, categories.length, status]);
 
   const handleImgError = (id) => {
     setImgErrors((prev) => ({ ...prev, [id]: true }));
   };
 
-  const isSearching = Boolean(searchQuery.trim());
+  const displayedCategories = useMemo(
+    () =>
+      categories.filter((category) => {
+        const source = getCategorySource(category);
 
-  const displayedCategories = categories.filter((category) => {
-    const source = String(category?.source || category?.sourceLabel || "")
-      .toLowerCase()
-      .trim();
-
-    if (selectedTab === "service") return source.includes("service");
-    if (selectedTab === "event") return source.includes("event");
-    return true;
-  });
+        if (selectedTab === "service") return source.includes("service");
+        if (selectedTab === "event") return source.includes("event");
+        return true;
+      }),
+    [categories, selectedTab]
+  );
 
   const handleCategoryClick = (category) => {
-    const source = String(category?.source || category?.sourceLabel || "")
-      .toLowerCase()
-      .trim();
+    const source = getCategorySource(category);
 
     if (source.includes("service")) {
       navigate(`/services?categoryId=${category.id}`);
@@ -57,16 +70,21 @@ export default function CategoryGrid({ searchQuery = "" }) {
       return;
     }
 
-    // Fallback: send unknown category types to services listing.
     navigate(`/services?categoryId=${category.id}`);
   };
 
-  if (error) return <div className="text-center py-20 text-red-500">{error}</div>;
+  const isInitialLoading = loading && categories.length === 0;
+  const showGrid = displayedCategories.length > 0;
+  const showEmptyTabState =
+    !isInitialLoading && !loading && displayedCategories.length === 0 && !isSearching;
+
+  if (error && categories.length === 0) {
+    return <div className="text-center py-20 text-red-500">{error}</div>;
+  }
 
   return (
-    <div className="min-h-screen bg-white py-14 md:pb-20 md:pt-10">
+    <div className="relative z-10 bg-white py-8 md:py-10">
       <div className="container mx-auto px-4">
-        {/* Tabs */}
         <div className="mb-8 inline-flex items-center gap-2 rounded-lg bg-[#EFD4C2] px-2 py-1.5">
           <button
             onClick={() => setSelectedTab("service")}
@@ -90,8 +108,7 @@ export default function CategoryGrid({ searchQuery = "" }) {
           </button>
         </div>
 
-        {/* No results message */}
-        {displayedCategories.length === 0 && isSearching && !loading && (
+        {isSearching && !loading && displayedCategories.length === 0 && (
           <div className="text-center py-20">
             <p className="text-gray-500 text-lg">
               No categories found matching &quot;{searchQuery}&quot;
@@ -102,53 +119,66 @@ export default function CategoryGrid({ searchQuery = "" }) {
           </div>
         )}
 
-        {/* Skeleton Loading State */}
-        {loading && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4 items-stretch">
+        {showEmptyTabState && (
+          <div className="text-center py-20">
+            <p className="text-gray-500 text-lg">
+              No {selectedTab === "service" ? "service" : "event"} categories found.
+            </p>
+          </div>
+        )}
+
+        {isInitialLoading && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4 items-start">
             {Array.from({ length: 8 }).map((_, index) => (
-              <SkeletonCategoryCard key={index} />
+              <SkeletonCategoryCard key={`skeleton-${index}`} />
             ))}
           </div>
         )}
 
-        {/* Responsive Grid Layout */}
-        {!loading && displayedCategories.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4 items-stretch">
+        {showGrid && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4 items-start">
             {displayedCategories.map((category) => (
               <div
-                key={category.id}
+                key={`${category.id}-${getCategorySource(category)}`}
                 onClick={() => handleCategoryClick(category)}
-                className="flex flex-col overflow-hidden bg-white cursor-pointer rounded-md h-full"
+                className="flex flex-col overflow-hidden bg-white cursor-pointer rounded-md shadow-sm"
               >
-                {/* Image Container - Aspect Ratio 4:3 matches the image */}
-                <div className="relative aspect-4/3 w-full overflow-hidden bg-gray-100 shrink-0">
+                <div className="overflow-hidden h-40 sm:h-48 md:h-52 shrink-0 bg-gray-100">
                   {!imgErrors[category.id] ? (
                     <img
                       src={category.image}
                       alt={category.title}
                       onError={() => handleImgError(category.id)}
-                      className="absolute inset-0 w-full h-full object-cover "
-                      loading="lazy"
+                      className="w-full h-full object-cover"
+                      loading="eager"
+                      decoding="async"
                     />
                   ) : (
-                    <div className="absolute inset-0 bg-gray-200 flex items-center justify-center">
+                    <div className="w-full h-full bg-gray-200 flex items-center justify-center">
                       <span className="text-[10px] text-gray-400">No Image</span>
                     </div>
                   )}
                 </div>
 
-                {/* Text Area - Matches the light peach/cream background in image */}
-                <div className="bg-[#FDF2ED] p-3 flex flex-col items-center justify-center min-h-17.5 flex-1">
+                <div className="bg-[#FDF2ED] p-3 flex flex-col items-center justify-center min-h-[70px]">
                   <h3 className="text-base font-medium text-gray-800 text-center uppercase tracking-tight leading-tight">
                     {category.title}
                   </h3>
-                  <p className="text-[14px] text-gray-500 font-medium mt-1 uppercase ">
+                  <p className="text-[14px] text-gray-500 font-medium mt-1 uppercase">
                     {category.type || category.source || category.sourceLabel || ""}
                   </p>
                 </div>
               </div>
             ))}
           </div>
+        )}
+
+        {loading && categories.length > 0 && (
+          <p className="mt-4 text-center text-sm text-gray-500">Updating categories...</p>
+        )}
+
+        {error && categories.length > 0 && (
+          <p className="mt-2 text-center text-sm text-red-500">{error}</p>
         )}
       </div>
     </div>

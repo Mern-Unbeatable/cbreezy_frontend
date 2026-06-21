@@ -10,10 +10,10 @@ const Categories = () => {
   };
 
   return (
-    <main>
+    <div>
       <CategoriesHero onSearch={handleSearch} />
       <CategoryGrid searchQuery={searchQuery} />
-    </main>
+    </div>
   );
 };
 

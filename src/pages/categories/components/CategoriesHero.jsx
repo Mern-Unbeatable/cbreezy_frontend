@@ -13,8 +13,13 @@ const CategoriesHero = ({ onSearch }) => {
   };
 
   return (
-    <section className="relative w-full overflow-hidden sm:min-h-150">
-      
+    <section className="relative w-full overflow-hidden">
+      {/* Desktop: in-flow spacer keeps section height stable while bg/content stay absolute */}
+      <div
+        className="hidden sm:block w-full h-[420px] md:h-[500px]"
+        aria-hidden="true"
+      />
+
       {/* Desktop background image */}
       <div
         className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat hidden sm:block"
@@ -29,21 +34,14 @@ const CategoriesHero = ({ onSearch }) => {
         className="w-full block sm:hidden"
       />
 
-      {/* Content — absolute overlay on mobile, centered on desktop */}
+      {/* Content overlay */}
       <div className="absolute inset-0 z-10 flex flex-col items-center justify-center w-full px-4 pt-12 pb-10">
-        
-        {/* Title with Fluid Font Size and Text Shadow */}
         <h1 className="text-white font-bold mb-8 text-center font-poppins drop-shadow-[0_2px_16px_rgba(0,0,0,0.3)] text-[1.5rem] sm:text-[3vw] lg:text-[2.5rem]">
           Categories
         </h1>
 
-        {/* Search Bar Container with Glass Effect */}
         <div className="w-full max-w-xs sm:max-w-md md:max-w-3xl mx-auto">
-          
-          {/* Outer Wrapper for the Glass Border Look */}
           <div className="p-1.5 sm:p-2 bg-white/10 backdrop-blur-md rounded-xl border border-white/20 shadow-2xl">
-            
-            {/* Inner Search Input Area */}
             <div className="flex items-center bg-white rounded-lg px-4 py-2">
               <Search className="text-gray-500 w-5 h-5 shrink-0 mr-3" />
               <input
@@ -55,7 +53,6 @@ const CategoriesHero = ({ onSearch }) => {
                 aria-label="Search categories"
               />
             </div>
-
           </div>
         </div>
       </div>

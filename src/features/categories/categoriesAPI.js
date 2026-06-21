@@ -9,15 +9,21 @@ const normalizeList = (data) => {
 };
 
 const normalizeCategory = (item, fallbackType = "general") => {
-  const source = item?.type || item?.categoryType || item?.source || fallbackType;
+  const rawSource = item?.type || item?.categoryType || item?.source || fallbackType;
+  const source = String(rawSource).toLowerCase();
 
   return {
     id: String(item?.id ?? item?._id ?? item?.categoryId ?? item?.name),
     title: item?.title ?? item?.name ?? item?.categoryName ?? "Untitled Category",
     image: item?.image ?? item?.imageUrl ?? item?.thumbnail ?? "/logo.png",
+    type: rawSource,
     source,
     sourceLabel:
-      source === "event" ? "Events" : source === "service" ? "Services" : "Category",
+      source.includes("event")
+        ? "Events"
+        : source.includes("service")
+          ? "Services"
+          : "Category",
   };
 };
 
