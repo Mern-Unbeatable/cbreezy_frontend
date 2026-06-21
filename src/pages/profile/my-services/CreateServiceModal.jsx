@@ -497,14 +497,14 @@ export default function CreateServiceModal({ isOpen, onClose, editService = null
     <>
       {!isPricingOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center z-50 p-3 sm:p-4 overflow-y-auto"
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-3 sm:p-4 overflow-hidden"
           onClick={handleCloseCreateModal}
         >
           <div 
-            className="bg-[#FDF2EB] rounded-lg w-full max-w-2xl max-h-[calc(100vh-1.5rem)] sm:max-h-[90vh] shadow-2xl flex flex-col overflow-visible my-3 sm:my-0"
+            className="bg-[#FDF2EB] rounded-lg w-full max-w-2xl max-h-[calc(100vh-1.5rem)] sm:max-h-[90vh] shadow-2xl flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-4 sm:px-6 py-4 bg-[#F5C3A2] border-b rounded-t-lg border-gray-100">
+            <div className="flex shrink-0 items-center justify-between px-4 sm:px-6 py-4 bg-[#F5C3A2] border-b rounded-t-lg border-gray-100">
               <h2 className="text-lg font-semibold text-gray-800">{isEditMode ? "Edit Service" : "Create Service"}</h2>
               <button
                 onClick={handleCloseCreateModal}
@@ -515,7 +515,7 @@ export default function CreateServiceModal({ isOpen, onClose, editService = null
               </button>
             </div>
 
-            <div className="px-4 sm:px-6 py-4 space-y-5 overflow-y-auto min-h-0">
+            <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-4 space-y-5">
               <div>
                 <h3 className="text-base text-[#0C0C0C] font-semibold mb-3">Service Details</h3>
 
@@ -816,22 +816,22 @@ export default function CreateServiceModal({ isOpen, onClose, editService = null
                   )}
                 </div>
               </div>
+            </div>
 
-              <div>
-                <button
-                  onClick={handleSubmitAndContinue}
-                  disabled={createLoading || updateLoading}
-                  className={`w-full font-semibold px-6 py-2.5 rounded transition text-sm ${
-                    createLoading || updateLoading
-                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                      : "bg-orange-400 text-white"
-                  }`}
-                >
-                  {isEditMode
-                    ? updateLoading ? "Saving..." : "Save Changes"
-                    : createLoading ? "Creating Service..." : "Submit & Continue"}
-                </button>
-              </div>
+            <div className="shrink-0 border-t border-[#EAEAEA] bg-[#FDF2EB] px-4 sm:px-6 py-4 rounded-b-lg">
+              <button
+                onClick={handleSubmitAndContinue}
+                disabled={createLoading || updateLoading}
+                className={`w-full font-semibold px-6 py-2.5 rounded transition text-sm ${
+                  createLoading || updateLoading
+                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    : "bg-orange-400 text-white"
+                }`}
+              >
+                {isEditMode
+                  ? updateLoading ? "Saving..." : "Save Changes"
+                  : createLoading ? "Creating Service..." : "Submit & Continue"}
+              </button>
             </div>
           </div>
         </div>

@@ -512,7 +512,7 @@ const AdminPricing = () => {
       <section className="space-y-6 md:space-y-10 px-2 md:px-0">
 
         <div>
-          <div className="flex items-center justify-between gap-2 sm:gap-3 mb-3 md:mb-4">
+          {/* <div className="flex items-center justify-between gap-2 sm:gap-3 mb-3 md:mb-4">
             <h1 className="text-xl sm:text-3xl leading-none font-bold text-[#111827] whitespace-nowrap">Pricing Plan</h1>
             <button
               type="button"
@@ -521,7 +521,7 @@ const AdminPricing = () => {
             >
               Add new price
             </button>
-          </div>
+          </div> */}
 
           <div className="flex flex-wrap gap-3">
             {pricingPlans.map((plan) => (
@@ -544,7 +544,7 @@ const AdminPricing = () => {
                     onClick={() => handleDeletePrice(plan.id)}
                     aria-label="Delete price"
                   >
-                    <Trash2 className="h-4 w-4 md:h-4.5 md:w-4.5" strokeWidth={2.5} />
+                    {/* <Trash2 className="h-4 w-4 md:h-4.5 md:w-4.5" strokeWidth={2.5} />   */}
                   </button>
                 </div>
               </div>
@@ -574,28 +574,28 @@ const AdminPricing = () => {
           </div>
 
           <div className="overflow-x-auto rounded-lg border border-[#ececec]">
-          <div className="my-4 px-4">
-            <div className="relative w-full">
-              {/* <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9ca3af]" /> */}
-              <input
-                type="text"
-                placeholder="Search countries, regions or cities"
-                className={`${inputClass} pl-10 pr-10 bg-white border border-[#e6e6e6]`}
-                value={countrySearch}
-                onChange={(e) => setCountrySearch(e.target.value)}
-              />
-              {countrySearch && (
-                <button
-                  type="button"
-                  onClick={() => setCountrySearch("")}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full grid place-items-center bg-[#f3f4f6] text-[#374151]"
-                  aria-label="Clear search"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
+            <div className="my-4 px-4">
+              <div className="relative w-full">
+                {/* <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9ca3af]" /> */}
+                <input
+                  type="text"
+                  placeholder="Search countries, regions or cities"
+                  className={`${inputClass} pl-10 pr-10 bg-white border border-[#e6e6e6]`}
+                  value={countrySearch}
+                  onChange={(e) => setCountrySearch(e.target.value)}
+                />
+                {countrySearch && (
+                  <button
+                    type="button"
+                    onClick={() => setCountrySearch("")}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full grid place-items-center bg-[#f3f4f6] text-[#374151]"
+                    aria-label="Clear search"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
             <div className="hidden md:block">
               <table className="w-full">
                 <thead>
@@ -827,7 +827,7 @@ const AdminPricing = () => {
               >
                 <div>
                   <label className="block text-sm md:text-base text-[#1f2937] mb-1.5 md:mb-2">Tittle</label>
-                  <input type="text" placeholder="tittle" className={inputClass} value={priceTitle} onChange={(e) => setPriceTitle(e.target.value)} />
+                  <input type="text" placeholder="tittle" readOnly={openModal === "edit-price"} className={inputClass} value={priceTitle} onChange={(e) => setPriceTitle(e.target.value)} />
                 </div>
                 <div>
                   <label className="block text-xs sm:text-sm md:text-[14px] text-[#1f2937] mb-1.5 md:mb-2">Price</label>
@@ -912,8 +912,8 @@ const AdminPricing = () => {
                   {deleteTarget.type === "country"
                     ? `Delete ${deleteTarget.name}? This will remove all regions and cities under this country.`
                     : deleteTarget.type === "region"
-                    ? `Delete ${deleteTarget.name} from ${deleteTarget.parentName}? This will remove all cities under this region.`
-                    : `Delete ${deleteTarget.name} from ${deleteTarget.parentName}?`}
+                      ? `Delete ${deleteTarget.name} from ${deleteTarget.parentName}? This will remove all cities under this region.`
+                      : `Delete ${deleteTarget.name} from ${deleteTarget.parentName}?`}
                 </p>
                 <div className="flex justify-end gap-2">
                   <button
