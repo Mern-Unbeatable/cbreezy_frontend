@@ -29,7 +29,7 @@ export default function EventPurchaseSuccess() {
     const raw = String(value || "").trim();
     if (!raw) return false;
     if (raw.includes("CHECKOUT_SESSION_ID") || raw.includes("{") || raw.includes("}")) return false;
-    return raw.startsWith("cs_");
+    return true; // PayPal order IDs don't have a specific prefix like Stripe's 'cs_'
   };
 
   const eventId = searchParams.get("eventId") || "";
@@ -37,6 +37,7 @@ export default function EventPurchaseSuccess() {
   const flow = (searchParams.get("flow") || "purchase").toLowerCase();
   const isRenewFlow = flow === "renew";
   const initialCheckoutSessionId =
+    searchParams.get("token") ||
     searchParams.get("session_id") ||
     searchParams.get("checkoutSessionId") ||
     searchParams.get("sessionId") ||

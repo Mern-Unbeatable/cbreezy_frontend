@@ -401,7 +401,7 @@ export const fetchPricingPlansEligibilityAPI = async () => {
     plans: activePlans,
     isUnderFirstThreeMonths,
     introductoryPlanId,
-    stripePublishableKey: source?.stripePublishableKey || "",
+    paypalClientId: source?.paypalClientId || "",
     stripeCurrency: source?.stripeCurrency || source?.currency || "",
     userLifecycle,
     isEligibleForFree,

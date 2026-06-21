@@ -262,76 +262,14 @@ export default function ManageEvents() {
     }
   };
 
-  const handleOpenPricingModal = (eventId) => {
+  const handleOpenPricingModal = (eventId, actionType = "renew") => {
     setPricingEventId(String(eventId || ""));
-    setPricingActionType("renew");
+    setPricingActionType(actionType);
     setIsPricingModalOpen(true);
   };
 
   const handlePayActivate = async (eventId) => {
-    try {
-      const cancelUrl = `${window.location.origin}/profile/my-events?purchase=cancelled`;
-
-      const elig = await dispatch(fetchEventPricingPlansEligibility()).unwrap();
-      const plans = elig?.plans || [];
-      const userLifecycle = elig?.userLifecycle || {};
-      const freePlan = plans.find((p) => String(p.title || "").toLowerCase() === "free activation");
-      const promoPlan = plans.find((p) => String(p.title || "").toLowerCase() === "intro pricing");
-      const standardPlan = plans.find((p) => String(p.title || "").toLowerCase() === "standard pricing");
-
-      let planId = "";
-      if (userLifecycle?.isEligibleForFree) {
-        planId = freePlan?.id || promoPlan?.id || standardPlan?.id || (plans[0] && plans[0].id);
-      } else if (userLifecycle?.isEligibleForDiscount) {
-        planId = promoPlan?.id || standardPlan?.id || (plans[0] && plans[0].id);
-      } else {
-        planId = standardPlan?.id || promoPlan?.id || (plans[0] && plans[0].id);
-      }
-
-      if (!planId) {
-        toast.error("No pricing plan available for purchase");
-        return;
-      }
-
-      const successUrl = `${window.location.origin}/profile/my-events/purchase-success?eventId=${encodeURIComponent(
-        eventId
-      )}&planId=${encodeURIComponent(planId)}&flow=purchase&session_id={CHECKOUT_SESSION_ID}`;
-
-      const result = await dispatch(purchaseEvent({ eventId, payload: { planId, successUrl, cancelUrl } })).unwrap();
-
-      const checkoutUrl = result?.checkoutUrl || result?.raw?.data?.checkoutUrl;
-      const noPaymentRequired = result?.raw?.data?.noPaymentRequired || result?.noPaymentRequired || false;
-      const checkoutSessionId =
-        result?.checkoutSessionId ||
-        result?.raw?.data?.checkoutSessionId ||
-        result?.raw?.data?.sessionId ||
-        "";
-
-      if (noPaymentRequired) {
-        toast.success("Activated for free");
-        dispatch(fetchMyEvents({ page: currentPage, limit: itemsPerPage }));
-        return;
-      }
-
-      if (checkoutUrl) {
-        sessionStorage.setItem(
-          "eventPaymentConfirmContext",
-          JSON.stringify({
-            eventId: String(eventId),
-            planId,
-            checkoutSessionId,
-            flow: "purchase",
-            createdAt: Date.now(),
-          })
-        );
-        window.location.assign(checkoutUrl);
-        return;
-      }
-
-      toast.error("Unexpected purchase response");
-    } catch (err) {
-      toast.error(err || "Failed to start payment");
-    }
+    handleOpenPricingModal(eventId, "purchase");
   };
 
   return (

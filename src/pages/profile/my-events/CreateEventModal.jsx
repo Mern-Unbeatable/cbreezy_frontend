@@ -662,6 +662,7 @@ export default function CreateEventModal({ isOpen, onClose, editEvent = null, on
                     <input
                       type="datetime-local"
                       value={toLocalDateTimeValue(form.eventStart)}
+                      min={toLocalDateTimeValue(new Date())}
                       onChange={(e) => handleInputChange("eventStart", e.target.value)}
                       className="w-full border border-gray-200 rounded px-3 py-2 text-base focus:outline-none focus:border-orange-300 bg-[#F8D6C0] text-[#373737]"
                     />
@@ -671,6 +672,7 @@ export default function CreateEventModal({ isOpen, onClose, editEvent = null, on
                     <input
                       type="datetime-local"
                       value={toLocalDateTimeValue(form.eventEnd)}
+                      min={toLocalDateTimeValue(form.eventStart) || toLocalDateTimeValue(new Date())}
                       onChange={(e) => handleInputChange("eventEnd", e.target.value)}
                       className="w-full border border-gray-200 rounded px-3 py-2 text-base focus:outline-none focus:border-orange-300 bg-[#F8D6C0] text-[#373737]"
                     />

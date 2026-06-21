@@ -223,7 +223,7 @@ const initialState = {
   pricingEligibility: {
     isUnderFirstThreeMonths: false,
     introductoryPlanId: "",
-    stripePublishableKey: "",
+    paypalClientId: "",
     stripeCurrency: "",
   },
   pricingPlansLoading: false,
@@ -268,7 +268,7 @@ const eventsSlice = createSlice({
       state.pricingEligibility = {
         isUnderFirstThreeMonths: false,
         introductoryPlanId: "",
-        stripePublishableKey: "",
+        paypalClientId: "",
         stripeCurrency: "",
       };
       state.purchaseLoading = false;
@@ -425,7 +425,7 @@ const eventsSlice = createSlice({
         state.pricingEligibility = {
           isUnderFirstThreeMonths: Boolean(action.payload?.isUnderFirstThreeMonths),
           introductoryPlanId: String(action.payload?.introductoryPlanId || ""),
-          stripePublishableKey: String(action.payload?.stripePublishableKey || ""),
+          paypalClientId: String(action.payload?.paypalClientId || ""),
           stripeCurrency: String(action.payload?.stripeCurrency || ""),
           userLifecycle: action.payload?.userLifecycle || {},
           isEligibleForFree: Boolean(action.payload?.isEligibleForFree),
@@ -439,7 +439,7 @@ const eventsSlice = createSlice({
         state.pricingEligibility = {
           isUnderFirstThreeMonths: false,
           introductoryPlanId: "",
-          stripePublishableKey: "",
+          paypalClientId: "",
           stripeCurrency: "",
         };
       })

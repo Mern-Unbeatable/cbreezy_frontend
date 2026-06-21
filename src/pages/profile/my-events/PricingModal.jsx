@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { toast } from "react-toastify";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import {
   clearEventPricingState,
   fetchEventPricingPlansEligibility,
@@ -27,6 +29,7 @@ export default function PricingModal({
   hideFreePlans = false,
 }) {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const plans = useSelector(selectEventPricingPlans);
   const pricingEligibility = useSelector(selectEventPricingEligibility);
   const pricingLoading = useSelector(selectEventPricingPlansLoading);
@@ -59,10 +62,24 @@ export default function PricingModal({
   const lowestPlanId = lockToLowestPlan ? pickLowestPricePlanId(plans) : "";
   const forcedPlanId = String(forcePlanId || "");
 
-  const getVisiblePlans = (list) =>
-    hideFreePlans
-      ? list.filter((p) => String(p?.tier || "").toLowerCase() !== "free" && Number(p?.price || 0) !== 0)
-      : list;
+  const isEligibleForFree = Boolean(
+    pricingEligibility?.isEligibleForFree || pricingEligibility?.userLifecycle?.isEligibleForFree
+  );
+  const isEligibleForDiscount = Boolean(
+    pricingEligibility?.isEligibleForDiscount || pricingEligibility?.userLifecycle?.isEligibleForDiscount
+  );
+
+  const getVisiblePlans = (list) => {
+    return list.filter((p) => {
+      const isFree = String(p?.tier || "").toLowerCase() === "free" || Number(p?.price || 0) === 0;
+      const isPromo = String(p?.tier || "").toLowerCase() === "promo" || p?.isIntroductory || String(p?.title || "").toLowerCase().includes("intro");
+
+      if (hideFreePlans && isFree) return false;
+      if (!isEligibleForFree && isFree) return false;
+      if (!isEligibleForDiscount && isPromo) return false;
+      return true;
+    });
+  };
 
   const findIntroPlanId = (list) => {
     const introPlan =
@@ -80,13 +97,6 @@ export default function PricingModal({
 
   const resolveEligibilityLockedPlanId = (list) => {
     if (!list.length) return "";
-
-    const isEligibleForFree = Boolean(
-      pricingEligibility?.isEligibleForFree || pricingEligibility?.userLifecycle?.isEligibleForFree
-    );
-    const isEligibleForDiscount = Boolean(
-      pricingEligibility?.isEligibleForDiscount || pricingEligibility?.userLifecycle?.isEligibleForDiscount
-    );
 
     if (lockToLowestPlan && lowestPlanId) {
       return lowestPlanId;
@@ -195,17 +205,17 @@ export default function PricingModal({
   const handlePurchase = async () => {
     if (!eventId) {
       toast.error(`Event ID not found for ${isRenewFlow ? "renew" : "purchase"}`);
-      return;
+      return null;
     }
 
     if (!selected) {
       toast.error("Please select a pricing plan");
-      return;
+      return null;
     }
 
     const successUrl = `${window.location.origin}/profile/my-events/purchase-success?eventId=${encodeURIComponent(
       eventId
-    )}&planId=${encodeURIComponent(selected)}&flow=${encodeURIComponent(actionType)}&session_id={CHECKOUT_SESSION_ID}`;
+    )}&planId=${encodeURIComponent(selected)}&flow=${encodeURIComponent(actionType)}`;
     const cancelUrl = `${window.location.origin}/profile/my-events?${isRenewFlow ? "renew" : "purchase"}=cancelled`;
 
     try {
@@ -221,11 +231,6 @@ export default function PricingModal({
         })
       ).unwrap();
 
-      if (!result?.checkoutUrl) {
-        toast.error(`Checkout URL not found from ${isRenewFlow ? "renew" : "purchase"} API`);
-        return;
-      }
-
       const confirmedPlanId = result?.selectedPlanId || selected;
       const confirmedCheckoutSessionId = result?.checkoutSessionId || "";
 
@@ -240,9 +245,21 @@ export default function PricingModal({
         })
       );
 
-      window.location.assign(result.checkoutUrl);
+      if (result?.checkoutSessionId) {
+        return result.checkoutSessionId;
+      }
+
+      if (!result?.checkoutUrl) {
+        const redirectUrl = `/profile/my-events/purchase-success?eventId=${encodeURIComponent(
+          eventId
+        )}&planId=${encodeURIComponent(selected)}&flow=${encodeURIComponent(actionType)}&session_id=${confirmedCheckoutSessionId}`;
+        navigate(redirectUrl);
+        return null;
+      }
+
+      return null;
     } catch {
-      // Error toast is handled from redux error state.
+      return null;
     }
   };
 
@@ -354,14 +371,32 @@ export default function PricingModal({
           </div>
         )}
 
-        <div className="px-6 pb-6">
-          <button
-            disabled={submitLoading || pricingLoading || !selected}
-            className="w-full py-3 rounded-xl bg-[#E97C35] active:bg-[#c45a0f] text-white font-semibold text-sm tracking-wide transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-[#E97C35] focus:ring-offset-2 shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
-            onClick={handlePurchase}
-          >
-            {submitLoading ? "Redirecting..." : isRenewFlow ? "Renew Now" : "Buy Now"}
-          </button>
+        <div className="px-6 pb-6 min-h-[48px]">
+          {(!pricingEligibility?.paypalClientId || Number(displayPlans.find(p => String(p.id) === String(selected))?.price || 0) === 0) ? (
+            <button
+              disabled={submitLoading || pricingLoading || !selected}
+              className="w-full py-3 rounded-xl bg-[#E97C35] active:bg-[#c45a0f] text-white font-semibold text-sm tracking-wide transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-[#E97C35] focus:ring-offset-2 shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
+              onClick={handlePurchase}
+            >
+              {submitLoading ? "Processing..." : isRenewFlow ? "Renew Now" : "Activate"}
+            </button>
+          ) : (
+            <PayPalScriptProvider options={{ "client-id": pricingEligibility.paypalClientId, currency: "USD" }}>
+              <PayPalButtons
+                style={{ layout: "vertical", shape: "rect", color: "gold" }}
+                disabled={submitLoading || pricingLoading || !selected}
+                createOrder={async () => {
+                  return await handlePurchase();
+                }}
+                onApprove={(data, actions) => {
+                  const successUrl = `/profile/my-events/purchase-success?eventId=${encodeURIComponent(
+                    eventId
+                  )}&planId=${encodeURIComponent(selected)}&flow=${encodeURIComponent(actionType)}&session_id=${data.orderID}`;
+                  navigate(successUrl);
+                }}
+              />
+            </PayPalScriptProvider>
+          )}
         </div>
       </div>
     </div>
