@@ -1,3 +1,4 @@
+import SEO from "../../components/SEO";
 import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -322,6 +323,7 @@ export default function Services() {
 
   return (
     <div className="min-h-screen bg-white font-sans">
+      <SEO title="Post Your Services Online | Find Local Side Jobs" description="Post your services online and connect with people looking for local side jobs. Discover flexible side hustles and weekend gigs near you." />
       {servicesError && (
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center px-4">

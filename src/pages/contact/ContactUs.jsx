@@ -1,3 +1,4 @@
+import SEO from "../../components/SEO";
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
@@ -69,6 +70,7 @@ export default function ContactUs() {
 
   return (
     <div className="relative min-h-screen overflow-hidden">
+      <SEO title="Contact SideGurus | Weekend Side Job Support" description="Have questions about weekend side jobs or flexible side hustles? Contact SideGurus for support and assistance." />
       <img
         src="/Categories/About_Us.png"
         alt="Contact background"

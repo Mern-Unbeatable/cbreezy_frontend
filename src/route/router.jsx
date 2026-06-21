@@ -52,13 +52,15 @@ const AppRoutes = () => {
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<ContactUs />} />
         <Route path="/privacy" element={<Privacy />} />
-        <Route path="/safety-guide" element={<SafetyGuide />} />
+        <Route path="/safety-guides" element={<SafetyGuide />} />
+        <Route path="/safety-guide" element={<Navigate to="/safety-guides" replace />} />
         <Route path="/sideguru-suggestions" element={<SideGuruSuggestions />} />
         <Route path="/post-add" element={<ComingSoon />} />
       </Route>
 
       {/* Authentication */}
-      <Route path="/login" element={<Login />} />
+      <Route path="/signin" element={<Login />} />
+      <Route path="/login" element={<Navigate to="/signin" replace />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/verify-registration-otp" element={<VerifyRegistrationOTP />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />

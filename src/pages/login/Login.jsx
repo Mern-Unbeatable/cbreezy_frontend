@@ -1,3 +1,4 @@
+import SEO from "../../components/SEO";
 import { useContext, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -155,6 +156,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row font-serif bg-[#FDF2EB]">
+      <SEO title="Sign In | SideGurus Local & Weekend Side Jobs" description="Sign in to your SideGurus account to manage local side jobs, weekend side hustles, and flexible side gigs near you." />
       {/* Left Side - Hidden on Mobile */}
       <div className="hidden md:flex w-full md:w-1/2 bg-[#FDF2EB] items-center justify-center p-10" style={{ borderRightColor: 'rgba(0, 0, 0, 0.08)', boxShadow: 'inset -15px 0 15px -10px rgba(0, 0, 0, 0.08)' }}>
         <a href="/" aria-label="Go to home">

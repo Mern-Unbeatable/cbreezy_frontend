@@ -1,6 +1,8 @@
+import SEO from "../../components/SEO";
 export default function Privacy() {
   return (
     <div className="min-h-screen bg-[#fdf2eb] py-10 ">
+      <SEO title="Privacy Policy | SideGurus Side Hustle Platform" description="Read the SideGurus privacy policy to understand how we protect your data while you find local side jobs and weekend gigs." />
       <div className="container mx-auto px-4 sm:px-6 md:px-8  text-[#2f2f2f]">
         <div className="text-center mb-10">
           <h1 className="text-4xl font-bold mb-2">Privacy</h1>

@@ -1,3 +1,4 @@
+import SEO from "../../components/SEO";
 import { useState } from "react";
 
 const customerGuidelines = [
@@ -215,6 +216,7 @@ export default function SafetyGuide() {
 
   return (
     <div className="min-h-screen bg-[#f3ece6] py-6 sm:py-8 md:py-10">
+      <SEO title="Side Hustle Safety Guide | Safe Local Side Jobs" description="Stay safe while finding local side jobs and weekend side hustles. Read our safety guide before starting your next side gig." />
       <div className="container mx-auto px-4 sm:px-6 md:px-8 text-[#2f2f2f]">
         <div className="mx-auto w-full max-w-6xl">
         <header className="mb-7 sm:mb-8">

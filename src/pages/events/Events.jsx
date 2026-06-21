@@ -1,3 +1,4 @@
+import SEO from "../../components/SEO";
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronUp, RotateCcw, X, Filter } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -285,6 +286,7 @@ export default function Events() {
 
   return (
     <div className="min-h-screen bg-white font-sans">
+      <SEO title="Weekend Side Gigs & Event Jobs Near You" description="Explore weekend side gigs, Saturday side jobs, and flexible event work near you. Find easy weekend side hustles and part-time gig work." />
       {eventsError && (
         <div className="flex items-center justify-center min-h-screen px-4">
           <div className="text-center">
