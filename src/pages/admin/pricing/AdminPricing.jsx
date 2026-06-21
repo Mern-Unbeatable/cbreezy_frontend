@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { SquarePen, Trash2, X } from "lucide-react";
+import { SquarePen, Trash2, X, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import {
@@ -48,6 +48,7 @@ const AdminPricing = () => {
   const countries = useSelector((state) => state.admin.countries);
 
   const [openModal, setOpenModal] = useState(null);
+  const [countrySearch, setCountrySearch] = useState("");
   const [editingPlanId, setEditingPlanId] = useState(null);
   const [editingCountryId, setEditingCountryId] = useState("");
   const [editingRegionContext, setEditingRegionContext] = useState({ countryId: "", regionId: "" });
@@ -70,8 +71,13 @@ const AdminPricing = () => {
   const [selectedRegionForCity, setSelectedRegionForCity] = useState({ countryId: "", regionId: "" });
   const modalContentRef = useRef(null);
   useEffect(() => {
-    dispatch(fetchAdminPricingData());
-  }, [dispatch]);
+    // Debounce search requests when `countrySearch` changes
+    const handler = setTimeout(() => {
+      dispatch(fetchAdminPricingData(countrySearch || ""));
+    }, 500);
+
+    return () => clearTimeout(handler);
+  }, [countrySearch, dispatch]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -508,13 +514,13 @@ const AdminPricing = () => {
         <div>
           <div className="flex items-center justify-between gap-2 sm:gap-3 mb-3 md:mb-4">
             <h1 className="text-xl sm:text-3xl leading-none font-bold text-[#111827] whitespace-nowrap">Pricing Plan</h1>
-            {/* <button
+            <button
               type="button"
               onClick={openAddPriceModal}
               className="h-9 sm:h-10 rounded-md bg-[#E97C35] px-3 sm:px-5 text-white text-xs sm:text-base font-medium hover:bg-[#cf6d2e] whitespace-nowrap shrink-0"
             >
               Add new price
-            </button> */}
+            </button>
           </div>
 
           <div className="flex flex-wrap gap-3">
@@ -532,14 +538,14 @@ const AdminPricing = () => {
                   >
                     <SquarePen className="h-3.5 w-3.5" />
                   </button>
-                  {/* <button
+                  <button
                     type="button"
                     className="text-[#E97C35] hover:text-[#dc2626]"
                     onClick={() => handleDeletePrice(plan.id)}
                     aria-label="Delete price"
                   >
                     <Trash2 className="h-4 w-4 md:h-4.5 md:w-4.5" strokeWidth={2.5} />
-                  </button> */}
+                  </button>
                 </div>
               </div>
             ))}
@@ -547,20 +553,20 @@ const AdminPricing = () => {
         </div>
 
         <div>
-          <div className="mb-3 md:mb-5 flex items-center justify-between gap-2 sm:gap-3">
-            <h2 className="text-xl sm:text-3xl leading-none font-bold text-[#111827] whitespace-nowrap">Country & Region</h2>
-            <div className="flex items-center gap-2 sm:gap-3">
+          <div className="mb-3 md:mb-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-2 sm:gap-3">
+            <h2 className="text-xl sm:text-3xl leading-none font-bold text-[#111827]">Country & Region</h2>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 mt-3 md:mt-0 w-full sm:w-auto">
               <button
                 type="button"
                 onClick={() => setOpenModal("region")}
-                className="h-9 sm:h-10 rounded-md bg-[#E97C35] px-3 sm:px-5 text-white text-xs sm:text-sm md:text-base font-medium whitespace-nowrap shrink-0"
+                className="h-9 sm:h-10 rounded-md bg-[#E97C35] px-3 sm:px-5 text-white text-xs sm:text-sm md:text-base font-medium w-full sm:w-auto"
               >
                 + Add Region
               </button>
               <button
                 type="button"
                 onClick={() => setOpenModal("country")}
-                className="h-9 sm:h-10 rounded-md bg-[#E97C35] px-3 sm:px-5 text-white text-xs sm:text-sm md:text-base font-medium whitespace-nowrap shrink-0"
+                className="h-9 sm:h-10 rounded-md bg-[#E97C35] px-3 sm:px-5 text-white text-xs sm:text-sm md:text-base font-medium w-full sm:w-auto"
               >
                 + Add Country
               </button>
@@ -568,164 +574,244 @@ const AdminPricing = () => {
           </div>
 
           <div className="overflow-x-auto rounded-lg border border-[#ececec]">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-[#F8FAFC] border-b border-[#ececec]">
-                  <th className="px-4 md:px-6 py-3 md:py-4 text-left text-sm md:text-base font-semibold text-[#111827]">Country</th>
-                  <th className="px-4 md:px-6 py-3 md:py-4 text-left text-sm md:text-base font-semibold text-[#111827]">Regions & Cities</th>
-                  <th className="px-4 md:px-6 py-3 md:py-4 text-right text-sm md:text-base font-semibold text-[#111827]">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {countries.map((country) => {
-                  const countryRegions = (Array.isArray(country.regions) ? country.regions : []);
-                  return (
-                    <tr key={country.id || country.name} className="border-b border-[#ececec] hover:bg-[#F9FAFB]">
-                      <td className="px-4 md:px-6 py-4 text-sm md:text-base text-[#111827] font-medium align-top">
-                        {country?.name || "N/A"}
-                      </td>
-                      <td className="px-4 md:px-6 py-4">
-                        <div className="space-y-3">
-                          {countryRegions.length > 0 ? (
-                            countryRegions.map((region) => {
-                              const regionCities = Array.isArray(region.cities) ? region.cities : [];
-                              return (
-                                <div
-                                  key={`${country.id}-${region.id || region.name}`}
-                                  className="p-3 rounded-lg bg-[#f0fdf4] border border-[#86efac]"
-                                >
-                                  <div className="flex items-center justify-between gap-2 mb-2">
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-sm md:text-base font-semibold text-[#166534]">
-                                        {region.name}
-                                      </span>
-                                      <button
-                                        type="button"
-                                        onClick={() =>
-                                          openEditRegionModal({
-                                            country: { id: country.id, name: country.name },
-                                            region: { id: region.id, name: region.name },
-                                          })
-                                        }
-                                        className="text-[#0f766e] hover:text-[#0d9488]"
-                                        aria-label="Edit region"
-                                      >
-                                        <SquarePen className="h-3.5 w-3.5" />
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() =>
-                                          openDeleteTargetModal({
-                                            type: "region",
-                                            countryId: country.id,
-                                            regionId: region.id,
-                                            name: region.name,
-                                            parentName: country.name,
-                                          })
-                                        }
-                                        className="text-[#dc2626] hover:text-[#b91c1c]"
-                                        aria-label="Delete region"
-                                      >
-                                        <X className="h-3.5 w-3.5" />
-                                      </button>
-                                    </div>
-                                    <button
-                                      type="button"
-                                      onClick={() => openAddCityModal({ countryId: country.id, regionId: region.id })}
-                                      className="h-7 rounded-md bg-[#10b981] px-2.5 text-white text-xs font-medium hover:bg-[#059669] whitespace-nowrap shrink-0"
-                                    >
-                                      + Add City
-                                    </button>
-                                  </div>
-                                  {regionCities.length > 0 ? (
-                                    <div className="flex flex-wrap gap-1.5 mt-2">
-                                      {regionCities.map((city) => (
-                                        <span
-                                          key={`${region.id}-${city.id || city.name}`}
-                                          className="inline-flex items-center gap-1 rounded-md border border-[#059669] px-2 py-1 text-xs text-[#047857] bg-white whitespace-nowrap"
-                                        >
-                                          {city.name}
-                                          <button
-                                            type="button"
-                                            onClick={() =>
-                                              openEditCityModal({
-                                                country: { id: country.id, name: country.name },
-                                                region: { id: region.id, name: region.name },
-                                                city: { id: city.id, name: city.name },
-                                              })
-                                            }
-                                            className="text-[#0f766e] hover:text-[#0d9488]"
-                                            aria-label="Edit city"
-                                          >
-                                            <SquarePen className="h-2.5 w-2.5" />
-                                          </button>
-                                          <button
-                                            type="button"
-                                            onClick={() =>
-                                              openDeleteTargetModal({
-                                                type: "city",
-                                                countryId: country.id,
-                                                regionId: region.id,
-                                                cityId: city.id,
-                                                name: city.name,
-                                                parentName: region.name,
-                                              })
-                                            }
-                                            className="text-[#dc2626] hover:text-[#b91c1c]"
-                                            aria-label="Delete city"
-                                          >
-                                            <X className="h-2.5 w-2.5" />
-                                          </button>
+          <div className="my-4 px-4">
+            <div className="relative w-full">
+              {/* <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9ca3af]" /> */}
+              <input
+                type="text"
+                placeholder="Search countries, regions or cities"
+                className={`${inputClass} pl-10 pr-10 bg-white border border-[#e6e6e6]`}
+                value={countrySearch}
+                onChange={(e) => setCountrySearch(e.target.value)}
+              />
+              {countrySearch && (
+                <button
+                  type="button"
+                  onClick={() => setCountrySearch("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full grid place-items-center bg-[#f3f4f6] text-[#374151]"
+                  aria-label="Clear search"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          </div>
+            <div className="hidden md:block">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-[#F8FAFC] border-b border-[#ececec]">
+                    <th className="px-4 md:px-6 py-3 md:py-4 text-left text-sm md:text-base font-semibold text-[#111827]">Country</th>
+                    <th className="px-4 md:px-6 py-3 md:py-4 text-left text-sm md:text-base font-semibold text-[#111827]">Regions & Cities</th>
+                    <th className="px-4 md:px-6 py-3 md:py-4 text-right text-sm md:text-base font-semibold text-[#111827]">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {countries.map((country) => {
+                    const countryRegions = (Array.isArray(country.regions) ? country.regions : []);
+                    return (
+                      <tr key={country.id || country.name} className="border-b border-[#ececec] hover:bg-[#F9FAFB]">
+                        <td className="px-4 md:px-6 py-4 text-sm md:text-base text-[#111827] font-medium align-top">
+                          {country?.name || "N/A"}
+                        </td>
+                        <td className="px-4 md:px-6 py-4">
+                          <div className="space-y-3">
+                            {countryRegions.length > 0 ? (
+                              countryRegions.map((region) => {
+                                const regionCities = Array.isArray(region.cities) ? region.cities : [];
+                                return (
+                                  <div
+                                    key={`${country.id}-${region.id || region.name}`}
+                                    className="p-3 rounded-lg bg-[#f0fdf4] border border-[#86efac]"
+                                  >
+                                    <div className="flex items-center justify-between gap-2 mb-2">
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-sm md:text-base font-semibold text-[#166534]">
+                                          {region.name}
                                         </span>
-                                      ))}
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            openEditRegionModal({
+                                              country: { id: country.id, name: country.name },
+                                              region: { id: region.id, name: region.name },
+                                            })
+                                          }
+                                          className="text-[#0f766e] hover:text-[#0d9488]"
+                                          aria-label="Edit region"
+                                        >
+                                          <SquarePen className="h-3.5 w-3.5" />
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            openDeleteTargetModal({
+                                              type: "region",
+                                              countryId: country.id,
+                                              regionId: region.id,
+                                              name: region.name,
+                                              parentName: country.name,
+                                            })
+                                          }
+                                          className="text-[#dc2626] hover:text-[#b91c1c]"
+                                          aria-label="Delete region"
+                                        >
+                                          <X className="h-3.5 w-3.5" />
+                                        </button>
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() => openAddCityModal({ countryId: country.id, regionId: region.id })}
+                                        className="h-7 rounded-md bg-[#10b981] px-2.5 text-white text-xs font-medium hover:bg-[#059669] whitespace-nowrap shrink-0"
+                                      >
+                                        + Add City
+                                      </button>
                                     </div>
-                                  ) : (
-                                    <p className="text-xs text-[#6b7280] italic mt-1">No cities added yet</p>
-                                  )}
-                                </div>
-                              );
-                            })
-                          ) : (
-                            <span className="text-xs md:text-sm text-[#9ca3af] italic">No regions</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 md:px-6 py-4 text-right align-top">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => openEditCountryModal(country)}
-                            className="text-[#0f766e] hover:text-[#0d9488] p-1.5"
-                            aria-label="Edit country"
-                          >
-                            <SquarePen className="h-4 w-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              openDeleteTargetModal({
-                                type: "country",
-                                countryId: country.id,
-                                name: country.name,
+                                    {regionCities.length > 0 ? (
+                                      <div className="flex flex-wrap gap-1.5 mt-2">
+                                        {regionCities.map((city) => (
+                                          <span
+                                            key={`${region.id}-${city.id || city.name}`}
+                                            className="inline-flex items-center gap-1 rounded-md border border-[#059669] px-2 py-1 text-xs text-[#047857] bg-white whitespace-nowrap"
+                                          >
+                                            {city.name}
+                                            <button
+                                              type="button"
+                                              onClick={() =>
+                                                openEditCityModal({
+                                                  country: { id: country.id, name: country.name },
+                                                  region: { id: region.id, name: region.name },
+                                                  city: { id: city.id, name: city.name },
+                                                })
+                                              }
+                                              className="text-[#0f766e] hover:text-[#0d9488]"
+                                              aria-label="Edit city"
+                                            >
+                                              <SquarePen className="h-2.5 w-2.5" />
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={() =>
+                                                openDeleteTargetModal({
+                                                  type: "city",
+                                                  countryId: country.id,
+                                                  regionId: region.id,
+                                                  cityId: city.id,
+                                                  name: city.name,
+                                                  parentName: region.name,
+                                                })
+                                              }
+                                              className="text-[#dc2626] hover:text-[#b91c1c]"
+                                              aria-label="Delete city"
+                                            >
+                                              <X className="h-2.5 w-2.5" />
+                                            </button>
+                                          </span>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <p className="text-xs text-[#6b7280] italic mt-1">No cities added yet</p>
+                                    )}
+                                  </div>
+                                );
                               })
-                            }
-                            className="text-[#dc2626] hover:text-[#b91c1c] p-1.5"
-                            aria-label="Delete country"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
+                            ) : (
+                              <span className="text-xs md:text-sm text-[#9ca3af] italic">No regions</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 md:px-6 py-4 text-right align-top">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => openEditCountryModal(country)}
+                              className="text-[#0f766e] hover:text-[#0d9488] p-1.5"
+                              aria-label="Edit country"
+                            >
+                              <SquarePen className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                openDeleteTargetModal({
+                                  type: "country",
+                                  countryId: country.id,
+                                  name: country.name,
+                                })
+                              }
+                              className="text-[#dc2626] hover:text-[#b91c1c] p-1.5"
+                              aria-label="Delete country"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              {countries.length === 0 && (
+                <div className="px-4 md:px-6 py-8 text-center text-[#9ca3af]">
+                  <p className="text-sm md:text-base">No countries added yet. Click "Add Country" to get started.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Mobile stacked view */}
+            <div className="block md:hidden space-y-3 px-3">
+              {countries.map((country) => (
+                <div key={country.id || country.name} className="bg-white border border-[#ececec] rounded-md p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="text-sm font-medium text-[#111827]">{country?.name || "N/A"}</div>
+                    <div className="flex items-center gap-2">
+                      <button type="button" onClick={() => openEditCountryModal(country)} className="text-[#0f766e] p-1.5">
+                        <SquarePen className="h-4 w-4" />
+                      </button>
+                      <button type="button" onClick={() => openDeleteTargetModal({ type: "country", countryId: country.id, name: country.name })} className="text-[#dc2626] p-1.5">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="mt-3 space-y-2">
+                    {(Array.isArray(country.regions) ? country.regions : []).length > 0 ? (
+                      (Array.isArray(country.regions) ? country.regions : []).map((region) => (
+                        <div key={region.id || region.name} className="p-2 rounded-md bg-[#f0fdf4] border border-[#86efac]">
+                          <div className="flex items-center justify-between">
+                            <div className="text-sm font-semibold text-[#166534]">{region.name}</div>
+                            <div className="flex items-center gap-2">
+                              <button type="button" onClick={() => openEditRegionModal({ country: { id: country.id, name: country.name }, region: { id: region.id, name: region.name } })} className="text-[#0f766e]">
+                                <SquarePen className="h-3.5 w-3.5" />
+                              </button>
+                              <button type="button" onClick={() => openDeleteTargetModal({ type: "region", countryId: country.id, regionId: region.id, name: region.name, parentName: country.name })} className="text-[#dc2626]">
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {(Array.isArray(region.cities) ? region.cities : []).length > 0 ? (
+                              (Array.isArray(region.cities) ? region.cities : []).map((city) => (
+                                <span key={city.id || city.name} className="inline-flex items-center gap-1 rounded-md border border-[#059669] px-2 py-1 text-xs text-[#047857] bg-white">
+                                  {city.name}
+                                </span>
+                              ))
+                            ) : (
+                              <div className="text-xs text-[#6b7280] italic">No cities</div>
+                            )}
+                          </div>
                         </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            {countries.length === 0 && (
-              <div className="px-4 md:px-6 py-8 text-center text-[#9ca3af]">
-                <p className="text-sm md:text-base">No countries added yet. Click "Add Country" to get started.</p>
-              </div>
-            )}
+                      ))
+                    ) : (
+                      <div className="text-xs text-[#9ca3af] italic">No regions</div>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {countries.length === 0 && (
+                <div className="px-4 py-8 text-center text-[#9ca3af]">
+                  <p className="text-sm">No countries added yet. Click "Add Country" to get started.</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </section>
@@ -741,7 +827,7 @@ const AdminPricing = () => {
               >
                 <div>
                   <label className="block text-sm md:text-base text-[#1f2937] mb-1.5 md:mb-2">Tittle</label>
-                  <input type="text" placeholder="tittle" className={inputClass} readOnly value={priceTitle} onChange={(e) => setPriceTitle(e.target.value)} />
+                  <input type="text" placeholder="tittle" className={inputClass} value={priceTitle} onChange={(e) => setPriceTitle(e.target.value)} />
                 </div>
                 <div>
                   <label className="block text-xs sm:text-sm md:text-[14px] text-[#1f2937] mb-1.5 md:mb-2">Price</label>

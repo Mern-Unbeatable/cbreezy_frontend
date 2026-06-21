@@ -12,7 +12,7 @@ const SideGuruSuggestions = () => {
       "Calligrapher – Specializes in elegant handwriting for weddings, events, or custom artwork.",
       "Digital Matte Painter – Creates digital backgrounds for films or video games.",
     ],
-    "Tech & Digital Professions": [
+    "Tech & Digital ": [
       "AI Prompt Engineer – Helps businesses or individuals optimize AI tools like ChatGPT or MidJourney.",
       "Virtual Reality (VR) Experience Designer – Creates immersive VR environments for gaming or training.",
       "Droneographer – Specializes in aerial photography and videography using drones.",
@@ -22,7 +22,7 @@ const SideGuruSuggestions = () => {
       "Chatbot Designer – Builds and customizes chatbots for businesses.",
       "Augmented Reality (AR) Developer – Creates AR experiences for apps or marketing campaigns.",
     ],
-    "Event & Entertainment Professions": [
+    "Event & Entertainment ": [
       "Escape Room Designer – Designs puzzles and themes for escape rooms.",
       "Party Motivator – Keeps guests engaged and energized at events or parties.",
       "Historical Reenactor – Portrays historical figures or events for educational or entertainment purposes.",
@@ -36,7 +36,7 @@ const SideGuruSuggestions = () => {
       "Personal Historian – Writes and records life stories for individuals or families.",
       "Happiness Coach – Helps clients find joy and fulfillment in their lives.",
     ],
-    "Food & Beverage Professions": [
+    "Food & Beverage ": [
       "Food Stylist – Prepares and arranges food for photography or film.",
       "Beverage Consultant – Creates custom drink menus for bars or events.",
       "Chocolate Sculptor – Designs edible chocolate sculptures for events or gifts.",
@@ -45,7 +45,7 @@ const SideGuruSuggestions = () => {
       "Cake Sculptor – Creates custom-shaped cakes for special occasions.",
       "Food Taster – Has a distinct pallet and will give feedback for your dishes, tells you what is missing and make that dish a mouth watering masterpiece.",
     ],
-    "Outdoor & Adventure Professions": [
+    "Outdoor & Adventure ": [
       "Geocaching Guide – Leads geocaching adventures for individuals or groups.",
       "Survival Skills Instructor – Teaches wilderness survival techniques.",
       "Treehouse Builder – Designs and constructs custom treehouses.",
@@ -53,7 +53,7 @@ const SideGuruSuggestions = () => {
       "Urban Explorer Guide – Leads tours of abandoned or hidden urban locations.",
       "Stargazing Guide – Hosts stargazing events and teaches astronomy basics.",
     ],
-    "Business & Marketing Professions": [
+    "Business & Marketing ": [
       "Brand Namer – Creates unique and catchy names for businesses or products.",
       "Jingle Writer – Composes catchy jingles for commercials or brands.",
       "Crowdfunding Consultant – Helps individuals or businesses launch successful crowdfunding campaigns.",
@@ -62,7 +62,7 @@ const SideGuruSuggestions = () => {
       "Resume Writer – Creates professional resumes tailored to specific industries.",
       "LinkedIn Profile Writer – Optimizes LinkedIn profiles for job seekers or professionals.",
     ],
-    "Niche Professions": [
+    "Niche ": [
       "Professional Apologist – Writes or delivers apologies on behalf of individuals or businesses.",
       "Time Capsule Creator – Designs and assembles time capsules for events or families.",
       "Memory Box Curator – Creates personalized memory boxes for special occasions.",
@@ -77,14 +77,15 @@ const SideGuruSuggestions = () => {
       "Balloon Artist – Creates intricate balloon sculptures for events.",
       "Pet Food Taster – Tests and reviews pet food for quality and taste.",
     ],
-    "Eco-Friendly & Sustainable Professions": [
+    "Eco-Friendly & Sustainable ": [
       "Upcycling Artist – Turns old or discarded items into new, functional art pieces.",
       "Composting Consultant – Helps households or businesses set up composting systems.",
       "Sustainable Living Coach – Teaches eco-friendly lifestyle practices.",
       "Green Roof Designer – Designs and installs eco-friendly green roofs.",
       "Zero-Waste Event Planner – Organizes events with minimal environmental impact.",
+      "Plant Therapist – Diagnose struggling houseplants, revive unhealthy greenery, and teach owners how to properly care for their indoor plants.",
     ],
-    "Unique Professions": [
+    "Unique ": [
       "Professional Sleeper – Tests mattresses, pillows, or sleep products for companies.",
       "Mystery Novelist – Writes custom mystery stories for individuals or events.",
       "Professional Dungeon Master – Hosts custom Dungeons & Dragons campaigns.",
@@ -92,6 +93,25 @@ const SideGuruSuggestions = () => {
       "Hologram Designer – Designs holographic displays for events or marketing.",
       "Professional Witness – Acts as a witness for weddings, legal documents, or events.",
       "Custom Emoji Designer – Creates personalized emojis for individuals or brands.",
+      "Apology Architect – Design thoughtful apology experiences that help repair relationships through meaningful messages, gestures, and creative delivery ideas.",
+      "Canine Breath Specialist – Perform close-up breath assessments for dogs, document scent observations, and contribute feedback to canine wellness evaluations.",
+    ],
+    "Personal Development & Lifestyle ": [
+      "Singing Telegram Performer – Deliver a personalized surprise performance at homes, workplaces, or events dressed as a themed character while presenting a custom song and gift or favorite snack.",
+      "Day-In-Your-Life Memory Creator – Document a client's real daily routine and transform it into a cinematic photo or video story capturing authentic life moments.",
+      "Emotional Declutter Companion – Support clients while they organize sentimental spaces, helping them let go of clutter with encouragement and practical organization guidance.",
+      "Home Vibe Curator – Refresh a home's atmosphere using lighting, scent, music, and layout adjustments to instantly elevate comfort and mood without renovation.",
+      "Personal Soundtrack Creator – Interview clients about their personality or life journey and craft a custom playlist that reflects their story, goals, or healing season.",
+      "Grocery Concierge – Shop strategically for families or professionals based on lifestyle, dietary needs, and budget while organizing groceries for efficiency at home.",
+      "Alter-Ego Confidence Coach – Help clients develop a powerful personal persona for dating, business, or public situations through mindset, style, and presence coaching.",
+      "Travel Packing Stylist – Plan and pack coordinated outfits and essentials so clients travel efficiently, stylishly, and stress-free.",
+      "Surprise Experience Planner – Create memorable surprise moments for birthdays, anniversaries, promotions, or special occasions tailored to the recipient's personality.",
+      "Conversation Companion – Provide friendly, intentional companionship through walks, coffee chats, or virtual conversations for those seeking connection or social engagement.",
+      "Digital Declutter Specialist – Organize phones, email inboxes, photos, and apps to reduce digital overwhelm and improve productivity.",
+      "Pet Adventure Buddy – Take pets on enriching outings like park adventures, café visits, or social playdates while sending owners real-time updates.",
+      "Confidence Rehearsal Partner – Help clients practice interviews, speeches, presentations, or difficult conversations with supportive feedback and coaching.",
+      "Dinner Party Ghost Host – Prepare ambiance, timing, and hosting flow behind the scenes so clients can entertain guests effortlessly.",
+      "Professional Kissing Consultant – Provide professional coaching teaching individuals how to kiss or be comfortable with kissing. Use props along with a rubric to gauge success.",
     ],
   };
 
@@ -103,8 +123,13 @@ const SideGuruSuggestions = () => {
           <h1 className="text-3xl md:text-5xl font-bold text-[#111827] mb-2">
             SideGuru Suggestions
           </h1>
+          <h2 className="text-xl md:text-2xl font-semibold text-[#111827] mb-2">
+            Ready to start a side hustle but need inspiration?
+          </h2>
           <p className="text-base md:text-lg text-[#6B7280]">
-            Explore unique and unconventional side gig opportunities across various industries
+            Browse our curated list of creative income opportunities and
+            discover new ways to monetize your talents across diverse
+            industries.
           </p>
         </div>
       </div>
@@ -117,7 +142,7 @@ const SideGuruSuggestions = () => {
               {/* Category Header */}
               <div className="mb-6 md:mb-8">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="h-1 w-1 rounded-full bg-[#E97C35]"></div>
+                  {/* <div className="h-1 w-1 rounded-full bg-[#E97C35]"></div> */}
                   <h2 className="text-2xl md:text-3xl font-bold text-[#111827]">
                     {category[0]}
                   </h2>
@@ -130,7 +155,8 @@ const SideGuruSuggestions = () => {
                 {category[1].map((suggestion, idx) => (
                   <div
                     key={idx}
-                    className="group p-4 md:p-6 rounded-lg border border-[#ececec] bg-white hover:border-[#E97C35] hover:shadow-md transition-all duration-300 hover:bg-gradient-to-br hover:from-white hover:to-[#FEF5F0]"
+                    // className="group p-4 md:p-6 rounded-lg border border-[#ececec] bg-white hover:border-[#E97C35] hover:shadow-md transition-all duration-300 hover:bg-gradient-to-br hover:from-white hover:to-[#FEF5F0]"
+                    className="group p-4 md:p-6 rounded-lg border border-[#ececec] bg-white  transition-all"
                   >
                     <p className="text-sm md:text-base leading-relaxed text-[#374151] group-hover:text-[#111827]">
                       <span className="font-semibold text-[#E97C35]">
@@ -159,7 +185,7 @@ const SideGuruSuggestions = () => {
             Found Your Perfect Side Gig?
           </h3>
           <p className="text-base md:text-lg text-orange-50 mb-6">
-            Connect with local service providers and find the right help for your needs
+            Turn your expertise into income one gig at a time!
           </p>
           <a
             href="/services"

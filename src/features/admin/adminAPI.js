@@ -686,8 +686,9 @@ export const deleteAdminPricingPlanAPI = async (pricingPlanId) => {
   return response?.data;
 };
 
-export const fetchAdminCountriesWithRegionsAPI = async () => {
-  const response = await apiClient.get("/api/locations/countries-with-regions");
+export const fetchAdminCountriesWithRegionsAPI = async (query) => {
+  const url = query ? `/api/locations/countries-with-regions?q=${encodeURIComponent(query)}` : "/api/locations/countries-with-regions";
+  const response = await apiClient.get(url);
   const countries = normalizeList(response.data).map(normalizeCountry).filter((country) => country.id);
 
   const flatRegionNames = countries.flatMap((country) =>

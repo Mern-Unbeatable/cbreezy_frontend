@@ -41,11 +41,10 @@ export const fetchCitiesByRegionAPI = async (regionId) => {
 
   return list
     .map((item) => ({
-      id: item?.id ?? item?.cityId ?? item?._id,
+      id: item?.id ?? item?.cityId ?? item?._id ?? item?.name,
       name: item?.cityName ?? item?.name ?? item?.title,
-      regionId: item?.regionId,
     }))
-    .filter((item) => item.id && item.name);
+    .filter((item) => item.name);
 };
 
 export const registerAPI = async (payload) => {

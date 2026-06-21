@@ -6,10 +6,10 @@ const ReachMoreCustomers = () => {
 
   return (
     <section className="w-full bg-[#fdf0eb]">
-      <div className="container mx-auto flex flex-col md:flex-row items-center py-14  px-6 sm:px-8 md:px-12  gap-14">
+      <div className="container mx-auto flex flex-col md:flex-row items-center py-14  px-4 sm:px-8 md:px-12  gap-14">
         {/* ===== Left Content ===== */}
         <div className="w-full text-center md:text-left">
-          <h2 className="text-[28px] md:text-[40px] text-start  font-bold text-gray-900 leading-tight mb-4">
+          <h2 className="text-xl sm:text-4xl  text-start  font-bold text-gray-900 leading-tight mb-4 font-[Poppins]">
             Reach More Customers
           
             by Listing Your Services

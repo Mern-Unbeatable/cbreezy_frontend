@@ -10,7 +10,6 @@ import {
   reportServiceSpam,
   selectServiceDetail,
   selectServiceDetailError,
-  selectServiceDetailLoading,
   selectServiceReportSpamError,
   selectServiceReportSpamLoading,
 } from "../../features/services/servicesSlice";
@@ -22,7 +21,6 @@ export default function ServiceDetail() {
   const [mainImage, setMainImage] = useState(null);
   const service = useSelector(selectServiceDetail);
   const serviceError = useSelector(selectServiceDetailError);
-  const serviceLoading = useSelector(selectServiceDetailLoading);
   const reportSpamLoading = useSelector(selectServiceReportSpamLoading);
   const reportSpamError = useSelector(selectServiceReportSpamError);
 
@@ -74,17 +72,6 @@ export default function ServiceDetail() {
     );
   }
 
-  if (serviceLoading || (!service && id)) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4" />
-          <p className="text-gray-600">Loading service...</p>
-        </div>
-      </div>
-    );
-  }
-
   if (!service) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -107,7 +94,7 @@ export default function ServiceDetail() {
   } = service;
 
   const thumbnailList = Array.isArray(thumbnails) && thumbnails.length > 0 ? thumbnails : image ? [image] : [];
-  const galleryList = Array.isArray(galleryImages) ? galleryImages : [];
+  const galleryList = Array.isArray(galleryImages) && galleryImages.length > 0 ? galleryImages : thumbnailList;
   const featuresList = Array.isArray(features) ? features : [];
   const targetsList = Array.isArray(serviceTargets) ? serviceTargets : [];
   const commonServicesList = Array.isArray(commonServices) ? commonServices : [];

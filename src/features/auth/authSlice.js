@@ -1,10 +1,10 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import {
+  fetchCitiesByRegionAPI,
   changePasswordAPI,
   fetchAccountSettingsAPI,
   fetchCountriesAPI,
   fetchRegionsByCountryAPI,
-  fetchCitiesByRegionAPI,
   forgotPasswordAPI,
   firebaseLoginAPI,
   firebaseRegisterAPI,
@@ -253,8 +253,6 @@ const authSlice = createSlice({
     clearRegions: (state) => {
       state.regions = [];
       state.regionsError = null;
-      state.cities = [];
-      state.citiesError = null;
     },
     clearCities: (state) => {
       state.cities = [];
@@ -299,15 +297,11 @@ const authSlice = createSlice({
       .addCase(fetchRegionsByCountry.fulfilled, (state, action) => {
         state.regionsLoading = false;
         state.regions = action.payload;
-        state.cities = [];
-        state.citiesError = null;
       })
       .addCase(fetchRegionsByCountry.rejected, (state, action) => {
         state.regionsLoading = false;
         state.regionsError = action.payload;
         state.regions = [];
-        state.cities = [];
-        state.citiesError = null;
       })
       .addCase(fetchCitiesByRegion.pending, (state) => {
         state.citiesLoading = true;

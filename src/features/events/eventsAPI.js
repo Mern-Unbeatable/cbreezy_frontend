@@ -73,7 +73,6 @@ const normalizeEventItem = (item) => ({
   regionId: item?.regionId ?? item?.region?._id ?? item?.region?.id,
   status: normalizeEventStatus(item?.status ?? item?.eventStatus ?? item?.listingStatus ?? item?.approvalStatus),
   showRenew: Boolean(item?.showRenew ?? item?.isRenewable),
-  payments: Array.isArray(item?.payments) ? item.payments : [],
 });
 
 const normalizeEvents = (payload) => {
@@ -113,16 +112,9 @@ const toImageArray = (value) => {
 
 const normalizeEventDetail = (payload) => {
   const item = payload?.data || payload?.result || payload;
-  const eventImages = toImageArray(
-    item?.eventImages || item?.thumbnails || item?.images || []
-  );
-  const galleryImages = toImageArray(item?.gallery || item?.eventGallery || item?.galleryImages || []);
-  const image =
-    eventImages[0] ||
-    item?.image ||
-    item?.imageUrl ||
-    item?.thumbnail ||
-    "";
+  const image = item?.image ?? item?.imageUrl ?? item?.thumbnail ?? "";
+  const thumbnails = toImageArray(item?.thumbnails || item?.images || item?.gallery || []);
+  const galleryImages = toImageArray(item?.galleryImages || item?.gallery || item?.images || []);
 
   const location =
     item?.location ||
@@ -145,8 +137,8 @@ const normalizeEventDetail = (payload) => {
     category: item?.category?.name ?? item?.categoryName ?? item?.category ?? "",
     subCategory: item?.subCategory?.name ?? item?.subCategoryName ?? item?.subCategory ?? "",
     image,
-    thumbnails: eventImages.length > 0 ? eventImages : image ? [image] : [],
-    galleryImages,
+    thumbnails: thumbnails.length > 0 ? thumbnails : image ? [image] : [],
+    galleryImages: galleryImages.length > 0 ? galleryImages : thumbnails,
     features: Array.isArray(item?.features)
       ? item.features.map(normalizeFeatureItem)
       : Array.isArray(item?.benefits)
@@ -286,9 +278,6 @@ export const fetchEventPricingPlansEligibilityAPI = async () => {
   const source = response?.data?.data || response?.data?.result || response?.data || {};
   const isUnderFirstThreeMonths = Boolean(source?.isUnderFirstThreeMonths);
   const introductoryPlanId = String(source?.introductoryPlanId || source?.introductoryPlan?.id || "");
-  const userLifecycle = source?.userLifecycle || {};
-  const isEligibleForFree = Boolean(userLifecycle?.isEligibleForFree);
-  const isEligibleForDiscount = Boolean(userLifecycle?.isEligibleForDiscount);
 
   let rawPlans = normalizeList(response.data);
 
@@ -309,9 +298,6 @@ export const fetchEventPricingPlansEligibilityAPI = async () => {
     introductoryPlanId,
     stripePublishableKey: source?.stripePublishableKey || "",
     stripeCurrency: source?.stripeCurrency || source?.currency || "",
-    userLifecycle,
-    isEligibleForFree,
-    isEligibleForDiscount,
   };
 };
 

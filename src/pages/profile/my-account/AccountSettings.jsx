@@ -7,9 +7,11 @@ import { AuthContext } from "../../../context/AuthContext";
 import {
   changeAccountPassword,
   clearRegions,
+  clearCities,
   fetchAccountSettings,
   fetchCountries,
   fetchRegionsByCountry,
+  fetchCitiesByRegion,
   selectAccountSettingsData,
   selectAccountSettingsFetchError,
   selectAccountSettingsFetchLoading,
@@ -23,6 +25,9 @@ import {
   selectRegions,
   selectRegionsError,
   selectRegionsLoading,
+  selectCities,
+  selectCitiesError,
+  selectCitiesLoading,
   updateAccountSettings,
 } from "../../../features/auth/authSlice";
 
@@ -101,10 +106,13 @@ export default function AccountSettings() {
   const accountSettingsFetchError = useSelector(selectAccountSettingsFetchError);
   const countries = useSelector(selectCountries);
   const regions = useSelector(selectRegions);
+  const cities = useSelector(selectCities);
   const countriesError = useSelector(selectCountriesError);
   const regionsError = useSelector(selectRegionsError);
+  const citiesError = useSelector(selectCitiesError);
   const countriesLoading = useSelector(selectCountriesLoading);
   const regionsLoading = useSelector(selectRegionsLoading);
+  const citiesLoading = useSelector(selectCitiesLoading);
   const savingSettings = useSelector(selectAccountSettingsLoading);
   const changingPassword = useSelector(selectChangePasswordLoading);
   const accountSettingsError = useSelector(selectAccountSettingsError);
@@ -115,6 +123,7 @@ export default function AccountSettings() {
   const [phone, setPhone] = useState("");
   const [country, setCountry] = useState("");
   const [location, setLocation] = useState("");
+  const [city, setCity] = useState("");
   const [avatar, setAvatar] = useState("");
   const [avatarFile, setAvatarFile] = useState(null);
 
@@ -168,6 +177,13 @@ export default function AccountSettings() {
   }, [accountSettingsData]);
 
   useEffect(() => {
+    if (accountSettingsData?.regionId) {
+      setLocation(String(accountSettingsData.regionId));
+      if (accountSettingsData?.cityId) setCity(String(accountSettingsData.cityId));
+    }
+  }, [accountSettingsData?.regionId, regions, accountSettingsData?.cityId]);
+
+  useEffect(() => {
     if (countriesError) {
       toast.error(countriesError);
     }
@@ -178,6 +194,12 @@ export default function AccountSettings() {
       toast.error(regionsError);
     }
   }, [regionsError]);
+
+  useEffect(() => {
+    if (citiesError) {
+      toast.error(citiesError);
+    }
+  }, [citiesError]);
 
   useEffect(() => {
     if (accountSettingsFetchError) {
@@ -200,13 +222,26 @@ export default function AccountSettings() {
   useEffect(() => {
     if (!country) {
       dispatch(clearRegions());
+      dispatch(clearCities());
       setLocation("");
+      setCity("");
       return;
     }
 
     dispatch(fetchRegionsByCountry(country));
     setLocation("");
   }, [country, dispatch]);
+
+  useEffect(() => {
+    if (!location) {
+      dispatch(clearCities());
+      setCity("");
+      return;
+    }
+
+    dispatch(fetchCitiesByRegion(location));
+    setCity("");
+  }, [location, dispatch]);
 
   useEffect(() => {
     if (accountSettingsData?.regionId) {
@@ -220,6 +255,11 @@ export default function AccountSettings() {
   }));
 
   const locationOptions = regions.map((item) => ({
+    value: String(item.id),
+    label: item.name,
+  }));
+
+  const cityOptions = cities.map((item) => ({
     value: String(item.id),
     label: item.name,
   }));
@@ -238,6 +278,7 @@ export default function AccountSettings() {
             phoneNumber: phone.trim(),
             countryId: country,
             regionId: location,
+            cityId: city,
             profileImage: avatarFile,
           })
         ).unwrap(),
@@ -371,7 +412,7 @@ export default function AccountSettings() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <SelectField
                       label="Country"
                       placeholder="Select country"
@@ -387,6 +428,14 @@ export default function AccountSettings() {
                       onChange={(e) => setLocation(e.target.value)}
                       options={locationOptions}
                       disabled={!country || regionsLoading || accountSettingsFetchLoading}
+                    />
+                    <SelectField
+                      label="City"
+                      placeholder="City"
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      options={cityOptions}
+                      disabled={!location || citiesLoading || accountSettingsFetchLoading}
                     />
                   </div>
                 </div>

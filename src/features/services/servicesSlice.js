@@ -431,9 +431,6 @@ const servicesSlice = createSlice({
           introductoryPlanId: String(action.payload?.introductoryPlanId || ""),
           stripePublishableKey: String(action.payload?.stripePublishableKey || ""),
           stripeCurrency: String(action.payload?.stripeCurrency || ""),
-          userLifecycle: action.payload?.userLifecycle || {},
-          isEligibleForFree: Boolean(action.payload?.isEligibleForFree),
-          isEligibleForDiscount: Boolean(action.payload?.isEligibleForDiscount),
         };
       })
       .addCase(fetchPricingPlansEligibility.rejected, (state, action) => {

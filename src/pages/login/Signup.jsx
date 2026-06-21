@@ -90,11 +90,9 @@ export default function Signup() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    const nextValue = name === "phone" ? value.replace(/[^\d+\-\s()]/g, "") : value;
-
     setFormData((prev) => ({
       ...prev,
-      [name]: nextValue,
+      [name]: value,
       ...(name === "country" ? { location: "" } : {}),
     }));
     setError("");
@@ -105,11 +103,6 @@ export default function Signup() {
     
     if (!formData.name || !formData.email || !formData.country || !formData.location || !formData.password || !formData.confirmPassword) {
       setError("Please fill in all fields");
-      return;
-    }
-
-    if (formData.phone && !/^[\d+\-\s()]+$/.test(formData.phone)) {
-      setError("Phone number can only contain numbers");
       return;
     }
 
@@ -327,7 +320,7 @@ export default function Signup() {
                     {loadingRegions ? "Loading..." : formData.country ? "Select Region" : "Select Country First"}
                   </option>
                   {regions.map((region) => (
-                    <option key={region.id} value={region.name}>
+                    <option key={region.id} value={region.id}>
                       {region.name}
                     </option>
                   ))}
@@ -390,7 +383,7 @@ export default function Signup() {
               disabled={isSubmitting || isGoogleSubmitting}
               className="w-full py-3 bg-[#e07b39] text-white border-0 rounded text-base font-bold cursor-pointer tracking-wide hover:bg-[#c9692a] transition-colors"
             >
-              {isSubmitting ? "Creating Account..." : "Sign Up"}
+              {isSubmitting ? "Creating Account..." : "Sign In"}
             </button>
 
             <button

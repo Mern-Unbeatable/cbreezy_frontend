@@ -22,6 +22,7 @@ import AdminListings from "../pages/admin/listings/AdminListings";
 import AdminListingDetail from "../pages/admin/listings/AdminListingDetail";
 import AdminRevenue from "../pages/admin/revenue/AdminRevenue";
 import AdminPricing from "../pages/admin/pricing/AdminPricing";
+import SupportTicketsPage from "../pages/SupportTicketsPage";
 import ComingSoon from "../pages/ComingSoon";
 import NotFound from "../pages/NotFound";
 import Home from "../pages/home/Home";
@@ -134,6 +135,7 @@ const AppRoutes = () => {
         <Route path="listings" element={<AdminListings />} />
         <Route path="listings/:id" element={<AdminListingDetail />} />
         <Route path="revenue" element={<AdminRevenue />} />
+        <Route path="support-tickets" element={<SupportTicketsPage />} />
         <Route path="pricing" element={<AdminPricing />} />
 
       </Route>

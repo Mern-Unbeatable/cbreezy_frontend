@@ -8,6 +8,7 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import CreateEventModal from "./CreateEventModal";
+import EditEventModal from "./EditEventModal";
 import PricingModal from "./PricingModal";
 import ExpiredEventsGrid from "./ExpiredEventsGrid";
 import SuspendedEventsGrid from "./SuspendedEventsGrid";
@@ -15,13 +16,20 @@ import Pagination from "../../../components/Pagination";
 import {
   deleteMyEvent,
   fetchMyEvents,
-  fetchEventPricingPlansEligibility,
-  purchaseEvent,
   selectMyEvents,
   selectMyEventsError,
   selectMyEventsLoading,
   selectMyEventsPagination,
+  updateMyEvent,
 } from "../../../features/events/eventsSlice";
+
+const toApiStatus = (value) => {
+  const status = String(value || "").trim().toUpperCase();
+  if (status === "EXPIRED" || status === "SUSPENDED" || status === "ACTIVE") {
+    return status;
+  }
+  return "ACTIVE";
+};
 
 function StatusBadge({ status }) {
   const colors = {
@@ -41,12 +49,7 @@ function StatusBadge({ status }) {
   );
 }
 
-function EventCard({ event, onEdit, onDelete, onRenew, onPay }) {
-  const [isActivating, setIsActivating] = useState(false);
-  const isUnpaid =
-    !Array.isArray(event?.payments) ||
-    event.payments.length === 0 ||
-    String(event.payments[0]?.status || "").toUpperCase() !== "SUCCESS";
+function EventCard({ event, onEdit, onDelete, onRenew }) {
   return (
     <div className="flex h-full min-h-[330px] sm:min-h-[360px] md:min-h-[400px] flex-col overflow-hidden rounded-lg sm:rounded-[10px] border border-[#EAEAEA] bg-[#FDF2EB] shadow-[0_1px_0_rgba(0,0,0,0.04)]">
       <div className="relative px-1.5 sm:px-2 pt-1.5 sm:pt-2">
@@ -101,33 +104,6 @@ function EventCard({ event, onEdit, onDelete, onRenew, onPay }) {
             </button>
           ) : (
             <div className="flex gap-1.5 sm:gap-2">
-              {isUnpaid && (
-                <button
-                  type="button"
-                  disabled={isActivating}
-                  onClick={async () => {
-                    setIsActivating(true);
-                    try {
-                      await onPay(event.id);
-                    } finally {
-                      setIsActivating(false);
-                    }
-                  }}
-                  className="flex flex-1 items-center justify-center gap-1 sm:gap-1.5 rounded-md border border-[#0f6e6a] bg-[#FFEFD6] py-1.5 sm:py-2 text-xs sm:text-sm md:text-base font-semibold text-[#0f6e6a] disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  {isActivating ? (
-                    <>
-                      <svg className="animate-spin h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#0f6e6a]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                      </svg>
-                      Processing...
-                    </>
-                  ) : (
-                    "Activate"
-                  )}
-                </button>
-              )}
               <button
                 type="button"
                 onClick={() => onEdit(event.id)}
@@ -219,6 +195,27 @@ export default function ManageEvents() {
     setIsEditModalOpen(true);
   };
 
+  const handleSaveEditedEvent = async (updatedEvent) => {
+    try {
+      await dispatch(
+        updateMyEvent({
+          eventId: updatedEvent.id,
+          payload: {
+            title: updatedEvent.title?.trim() || undefined,
+            description: updatedEvent.description?.trim() || undefined,
+            status: toApiStatus(updatedEvent.status),
+          },
+        })
+      ).unwrap();
+
+      setIsEditModalOpen(false);
+      setEditingEvent(null);
+      toast.success("Event updated successfully");
+    } catch (error) {
+      toast.error(error || "Failed to update event");
+    }
+  };
+
   const handleCloseEditModal = () => {
     setIsEditModalOpen(false);
     setEditingEvent(null);
@@ -244,72 +241,6 @@ export default function ManageEvents() {
     setPricingEventId(String(eventId || ""));
     setPricingActionType("renew");
     setIsPricingModalOpen(true);
-  };
-
-  const handlePayActivate = async (eventId) => {
-    try {
-      const cancelUrl = `${window.location.origin}/profile/my-events?purchase=cancelled`;
-
-      const elig = await dispatch(fetchEventPricingPlansEligibility()).unwrap();
-      const plans = elig?.plans || [];
-      const userLifecycle = elig?.userLifecycle || {};
-      const freePlan = plans.find((p) => String(p.title || "").toLowerCase() === "free activation");
-      const promoPlan = plans.find((p) => String(p.title || "").toLowerCase() === "intro pricing");
-      const standardPlan = plans.find((p) => String(p.title || "").toLowerCase() === "standard pricing");
-
-      let planId = "";
-      if (userLifecycle?.isEligibleForFree) {
-        planId = freePlan?.id || promoPlan?.id || standardPlan?.id || (plans[0] && plans[0].id);
-      } else if (userLifecycle?.isEligibleForDiscount) {
-        planId = promoPlan?.id || standardPlan?.id || (plans[0] && plans[0].id);
-      } else {
-        planId = standardPlan?.id || promoPlan?.id || (plans[0] && plans[0].id);
-      }
-
-      if (!planId) {
-        toast.error("No pricing plan available for purchase");
-        return;
-      }
-
-      const successUrl = `${window.location.origin}/profile/my-events/purchase-success?eventId=${encodeURIComponent(
-        eventId
-      )}&planId=${encodeURIComponent(planId)}&flow=purchase&session_id={CHECKOUT_SESSION_ID}`;
-
-      const result = await dispatch(purchaseEvent({ eventId, payload: { planId, successUrl, cancelUrl } })).unwrap();
-
-      const checkoutUrl = result?.checkoutUrl || result?.raw?.data?.checkoutUrl;
-      const noPaymentRequired = result?.raw?.data?.noPaymentRequired || result?.noPaymentRequired || false;
-      const checkoutSessionId =
-        result?.checkoutSessionId ||
-        result?.raw?.data?.checkoutSessionId ||
-        result?.raw?.data?.sessionId ||
-        "";
-
-      if (noPaymentRequired) {
-        toast.success("Activated for free");
-        dispatch(fetchMyEvents({ page: currentPage, limit: itemsPerPage }));
-        return;
-      }
-
-      if (checkoutUrl) {
-        sessionStorage.setItem(
-          "eventPaymentConfirmContext",
-          JSON.stringify({
-            eventId: String(eventId),
-            planId,
-            checkoutSessionId,
-            flow: "purchase",
-            createdAt: Date.now(),
-          })
-        );
-        window.location.assign(checkoutUrl);
-        return;
-      }
-
-      toast.error("Unexpected purchase response");
-    } catch (err) {
-      toast.error(err || "Failed to start payment");
-    }
   };
 
   return (
@@ -384,7 +315,6 @@ export default function ManageEvents() {
                   onEdit={handleEditEvent}
                   onDelete={handleDeleteEvent}
                   onRenew={handleOpenPricingModal}
-                  onPay={handlePayActivate}
                 />
               ))}
             </div>
@@ -409,14 +339,13 @@ export default function ManageEvents() {
       <CreateEventModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        onSaved={() => dispatch(fetchMyEvents({ page: currentPage, limit: itemsPerPage }))}
       />
 
-      <CreateEventModal
+      <EditEventModal
         isOpen={isEditModalOpen}
-        editEvent={editingEvent}
+        event={editingEvent}
         onClose={handleCloseEditModal}
-        onSaved={() => dispatch(fetchMyEvents({ page: currentPage, limit: itemsPerPage }))}
+        onSave={handleSaveEditedEvent}
       />
 
       <PricingModal

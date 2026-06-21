@@ -5,11 +5,8 @@ import { toast } from "react-toastify";
 import PricingModal from "./PricingModal";
 import {
   createService,
-  updateMyService,
   fetchServiceCategories,
   fetchServiceCategoryDetail,
-  fetchPricingPlansEligibility,
-  purchaseService,
   selectCreateServiceLoading,
   selectServiceCategories,
   selectServiceCategoriesLoading,
@@ -18,21 +15,19 @@ import {
 import {
   fetchCountries,
   fetchRegionsByCountry,
-  fetchCitiesByRegion,
-  clearCities,
   selectCountries,
   selectCountriesLoading,
   selectRegions,
   selectRegionsLoading,
+  fetchCitiesByRegion,
   selectCities,
   selectCitiesLoading,
+  selectCitiesError,
 } from "../../../features/auth/authSlice";
 
-export default function CreateServiceModal({ isOpen, onClose, editService = null, onSaved }) {
+export default function CreateServiceModal({ isOpen, onClose }) {
   const dispatch = useDispatch();
-  const isEditMode = Boolean(editService?.id);
   const [isPricingOpen, setIsPricingOpen] = useState(false);
-  const [updateLoading, setUpdateLoading] = useState(false);
   const createLoading = useSelector(selectCreateServiceLoading);
   const categories = useSelector(selectServiceCategories);
   const categoriesLoading = useSelector(selectServiceCategoriesLoading);
@@ -43,11 +38,9 @@ export default function CreateServiceModal({ isOpen, onClose, editService = null
   const regionsLoading = useSelector(selectRegionsLoading);
   const cities = useSelector(selectCities);
   const citiesLoading = useSelector(selectCitiesLoading);
+  const citiesError = useSelector(selectCitiesError);
 
   const [createdServiceId, setCreatedServiceId] = useState("");
-  const [pricingForcePlanId, setPricingForcePlanId] = useState("");
-  const [pricingLockSelection, setPricingLockSelection] = useState(false);
-  const [pricingHideFree, setPricingHideFree] = useState(false);
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -102,31 +95,6 @@ export default function CreateServiceModal({ isOpen, onClose, editService = null
     dispatch(fetchCountries());
   }, [dispatch, isOpen]);
 
-  // Pre-fill form in edit mode
-  useEffect(() => {
-    if (!isEditMode || !editService) return;
-    const parsePrice = (v) => String(v || "").replace(/[^0-9.]/g, "");
-    setForm({
-      title: editService.title || "",
-      description: editService.description || "",
-      price: parsePrice(editService.price),
-      categoryId: editService.categoryId || "",
-      subCategoryId: editService.subCategoryId || "",
-      countryId: editService.countryId || "",
-      regionId: editService.regionId || "",
-      cityId: editService.cityId || "",
-      address: editService.address || "",
-      contactEmail: editService.contactEmail || "",
-      contactPhone: editService.contactPhone || "",
-      facebookUrl: editService.facebookUrl || "",
-      instagramUrl: editService.instagramUrl || "",
-    });
-    setServiceImageFiles([]);
-    setServiceImagePreviews([]);
-    setGalleryImageFiles([]);
-    setGalleryImagePreviews([]);
-  }, [editService, isEditMode]);
-
   useEffect(() => {
     if (form.categoryId) {
       dispatch(fetchServiceCategoryDetail(form.categoryId));
@@ -140,12 +108,9 @@ export default function CreateServiceModal({ isOpen, onClose, editService = null
   }, [dispatch, form.countryId]);
 
   useEffect(() => {
-    if (!form.regionId) {
-      dispatch(clearCities());
-      return;
+    if (form.regionId) {
+      dispatch(fetchCitiesByRegion(form.regionId));
     }
-
-    dispatch(fetchCitiesByRegion(form.regionId));
   }, [dispatch, form.regionId]);
 
   const handleCloseCreateModal = () => {
@@ -232,45 +197,6 @@ export default function CreateServiceModal({ isOpen, onClose, editService = null
   };
 
   const handleSubmitAndContinue = async () => {
-    if (!String(form.title || "").trim()) {
-      toast.error("Service title is required");
-      return;
-    }
-
-    // ── EDIT MODE ──
-    if (isEditMode) {
-      const payload = new FormData();
-      payload.append("title", form.title.trim());
-      payload.append("description", form.description.trim());
-      if (form.price) payload.append("price", form.price);
-      if (form.categoryId) payload.append("categoryId", form.categoryId);
-      if (form.subCategoryId) payload.append("subCategoryId", form.subCategoryId);
-      if (form.countryId) payload.append("countryId", form.countryId);
-      if (form.regionId) payload.append("regionId", form.regionId);
-      if (form.cityId) payload.append("cityId", form.cityId);
-      if (form.address.trim()) payload.append("address", form.address.trim());
-      payload.append("contactEmail", form.contactEmail.trim());
-      payload.append("contactPhone", form.contactPhone.trim());
-      if (form.facebookUrl.trim()) payload.append("facebookUrl", form.facebookUrl.trim());
-      if (form.instagramUrl.trim()) payload.append("instagramUrl", form.instagramUrl.trim());
-      serviceImageFiles.forEach((file) => payload.append("serviceImages", file));
-      galleryImageFiles.forEach((file) => payload.append("serviceGallery", file));
-
-      setUpdateLoading(true);
-      try {
-        await dispatch(updateMyService({ serviceId: editService.id, payload })).unwrap();
-        toast.success("Service updated successfully");
-        if (onSaved) onSaved();
-        onClose();
-      } catch (error) {
-        toast.error(error || "Failed to update service");
-      } finally {
-        setUpdateLoading(false);
-      }
-      return;
-    }
-
-    // ── CREATE MODE ──
     const required = [
       "title",
       "description",
@@ -279,7 +205,6 @@ export default function CreateServiceModal({ isOpen, onClose, editService = null
       "subCategoryId",
       "countryId",
       "regionId",
-      "cityId",
       "address",
       "contactEmail",
       "contactPhone",
@@ -326,61 +251,13 @@ export default function CreateServiceModal({ isOpen, onClose, editService = null
         return;
       }
 
-      toast.info("Service created — please complete payment to activate.");
-      const serviceId = String(result.serviceId);
-      try {
-        const eligibility = await dispatch(fetchPricingPlansEligibility()).unwrap();
-        const plans = eligibility?.plans || [];
-        const userLifecycle = eligibility?.userLifecycle || {};
-        const isEligibleForFree = Boolean(eligibility?.isEligibleForFree || userLifecycle?.isEligibleForFree);
-        const isEligibleForDiscount = Boolean(eligibility?.isEligibleForDiscount || userLifecycle?.isEligibleForDiscount);
-
-        if (isEligibleForFree) {
-          const freePlan = plans.find((p) => String(p?.tier || "").toLowerCase() === "free" || Number(p?.price || 0) === 0) || plans[0];
-          if (freePlan?.id) {
-            const successUrl = `${window.location.origin}/profile/my-services/purchase-success?serviceId=${encodeURIComponent(
-              serviceId
-            )}&planId=${encodeURIComponent(freePlan.id)}&flow=purchase&session_id={CHECKOUT_SESSION_ID}`;
-            const cancelUrl = `${window.location.origin}/profile/my-services?purchase=cancelled`;
-            const purchaseResult = await dispatch(purchaseService({ serviceId, payload: { planId: freePlan.id, successUrl, cancelUrl } })).unwrap();
-            if (purchaseResult?.checkoutUrl) {
-              window.location.assign(purchaseResult.checkoutUrl);
-              return;
-            }
-
-            toast.success("Activated for free");
-            if (onSaved) onSaved();
-            handleCloseCreateModal();
-            return;
-          }
-        }
-
-        if (!isEligibleForFree && isEligibleForDiscount) {
-          const introId = String(eligibility?.introductoryPlanId || "") || String((plans.find((p) => p.isIntroductory) || {}).id || "");
-          handleOpenPricingModal(serviceId);
-          setCreatedServiceId(serviceId);
-          setPricingForcePlanId(introId || "");
-          setPricingLockSelection(true);
-          setPricingHideFree(true);
-          return;
-        }
-
-        const standardPlan = plans.find((p) => String(p?.title || "").toLowerCase().includes("standard")) || plans.find((p) => Number(p.price || 0) > 0) || plans[0];
-        const standardId = String(standardPlan?.id || "");
-        handleOpenPricingModal(serviceId);
-        setCreatedServiceId(serviceId);
-        setPricingForcePlanId(standardId);
-        setPricingLockSelection(true);
-        setPricingHideFree(true);
-      } catch (err) {
-        handleOpenPricingModal(result.serviceId);
-      }
+      toast.success("Service created successfully");
+      handleOpenPricingModal(result.serviceId);
     } catch (error) {
       toast.error(error || "Failed to create service");
     }
   };
 
-  if (!isOpen && !isPricingOpen && !isEditMode) return null;
   if (!isOpen && !isPricingOpen) return null;
 
   return (
@@ -395,7 +272,7 @@ export default function CreateServiceModal({ isOpen, onClose, editService = null
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-4 sm:px-6 py-4 bg-[#F5C3A2] border-b rounded-t-lg border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-800">{isEditMode ? "Edit Service" : "Create Service"}</h2>
+              <h2 className="text-lg font-semibold text-gray-800">Create Service</h2>
               <button
                 onClick={handleCloseCreateModal}
                 className="text-gray-600 hover:text-gray-700 transition"
@@ -478,7 +355,7 @@ export default function CreateServiceModal({ isOpen, onClose, editService = null
                   />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
                   <div>
                     <label className="block text-base text-[#0C0C0C] mb-1">Country</label>
                     <select
@@ -496,7 +373,7 @@ export default function CreateServiceModal({ isOpen, onClose, editService = null
                     </select>
                   </div>
                   <div>
-                    <label className="block text-base text-[#0C0C0C] mb-1">Region</label>
+                    <label className="block text-base text-[#0C0C0C] mb-1">Location</label>
                     <select
                       value={form.regionId}
                       onChange={(e) => handleInputChange("regionId", e.target.value)}
@@ -511,9 +388,6 @@ export default function CreateServiceModal({ isOpen, onClose, editService = null
                       ))}
                     </select>
                   </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                   <div>
                     <label className="block text-base text-[#0C0C0C] mb-1">City</label>
                     <select
@@ -529,30 +403,24 @@ export default function CreateServiceModal({ isOpen, onClose, editService = null
                         </option>
                       ))}
                     </select>
+                    {citiesError && <p className="text-xs text-red-500 mt-1">Failed to load cities</p>}
                   </div>
-                  <div>
-                    <label className="block text-base text-[#0C0C0C] mb-1">Address</label>
-                    <input
-                      type="text"
-                      placeholder="Enter full address"
-                      value={form.address}
-                      onChange={(e) => handleInputChange("address", e.target.value)}
-                      className="w-full border border-gray-200 rounded px-3 py-2 focus:outline-none focus:border-orange-300 bg-[#F8D6C0]"
-                    />
-                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-base text-[#0C0C0C] mb-1">Address</label>
+                  <input
+                    type="text"
+                    placeholder="Enter full address"
+                    value={form.address}
+                    onChange={(e) => handleInputChange("address", e.target.value)}
+                    className="w-full border border-gray-200 rounded px-3 py-2 focus:outline-none focus:border-orange-300 bg-[#F8D6C0]"
+                  />
                 </div>
               </div>
 
               <div>
-                <h3 className="text-base text-[#0C0C0C] font-semibold mb-3">
-                  Service Image ({serviceImageFiles.length}/4){isEditMode && " — upload new to replace"}
-                </h3>
-                {isEditMode && editService?.image && serviceImageFiles.length === 0 && (
-                  <div className="mb-2 flex items-center gap-3">
-                    <img src={editService.image} alt="current" className="h-16 w-16 rounded object-cover border border-gray-200" />
-                    <span className="text-xs text-gray-500">Current image</span>
-                  </div>
-                )}
+                <h3 className="text-base text-[#0C0C0C] font-semibold mb-3">Service Image ({serviceImageFiles.length}/4)</h3>
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-3">
                   {serviceImagePreviews.map((src, i) => (
                     <div key={i} className="relative aspect-square rounded overflow-hidden bg-gray-100">
@@ -670,16 +538,14 @@ export default function CreateServiceModal({ isOpen, onClose, editService = null
               <div>
                 <button
                   onClick={handleSubmitAndContinue}
-                  disabled={createLoading || updateLoading}
+                  disabled={createLoading}
                   className={`w-full font-semibold px-6 py-2.5 rounded transition text-sm ${
-                    createLoading || updateLoading
+                    createLoading
                       ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                      : "bg-orange-400 text-white"
+                      : "bg-orange-400  text-white"
                   }`}
                 >
-                  {isEditMode
-                    ? updateLoading ? "Saving..." : "Save Changes"
-                    : createLoading ? "Creating Service..." : "Submit & Continue"}
+                  {createLoading ? "Creating Service..." : "Submit & Continue"}
                 </button>
               </div>
             </div>
@@ -691,9 +557,6 @@ export default function CreateServiceModal({ isOpen, onClose, editService = null
         isOpen={isPricingOpen}
         serviceId={createdServiceId}
         onClose={handleClosePricingModal}
-        forcePlanId={pricingForcePlanId}
-        lockSelection={pricingLockSelection}
-        hideFreePlans={pricingHideFree}
       />
     </>
   );

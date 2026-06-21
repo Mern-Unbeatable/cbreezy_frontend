@@ -10,7 +10,6 @@ import {
   reportEventSpam,
   selectEventDetail,
   selectEventDetailError,
-  selectEventDetailLoading,
   selectReportSpamError,
   selectReportSpamLoading,
 } from "../../features/events/eventsSlice";
@@ -28,7 +27,6 @@ export default function EventDetail() {
   const dispatch = useDispatch();
   const event = useSelector(selectEventDetail);
   const eventError = useSelector(selectEventDetailError);
-  const eventLoading = useSelector(selectEventDetailLoading);
   const reportSpamLoading = useSelector(selectReportSpamLoading);
   const reportSpamError = useSelector(selectReportSpamError);
   const [mainImage, setMainImage] = useState(null);
@@ -81,17 +79,6 @@ export default function EventDetail() {
     );
   }
 
-  if (eventLoading || (!event && id)) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4" />
-          <p className="text-gray-600">Loading event...</p>
-        </div>
-      </div>
-    );
-  }
-
   if (!event) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -122,7 +109,7 @@ export default function EventDetail() {
   } = event;
 
   const thumbnailList = Array.isArray(thumbnails) && thumbnails.length > 0 ? thumbnails : image ? [image] : [];
-  const galleryList = Array.isArray(galleryImages) ? galleryImages : [];
+  const galleryList = Array.isArray(galleryImages) && galleryImages.length > 0 ? galleryImages : thumbnailList;
   const featuresList = Array.isArray(features) ? features : [];
   const targetsList = Array.isArray(serviceTargets) ? serviceTargets : [];
   const commonServicesList = Array.isArray(commonServices) ? commonServices : [];

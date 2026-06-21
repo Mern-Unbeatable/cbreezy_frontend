@@ -23,6 +23,10 @@ import {
   selectRegions,
   selectRegionsError,
   selectRegionsLoading,
+  fetchCitiesByRegion,
+  selectCities,
+  selectCitiesLoading,
+  selectCitiesError,
 } from "../../features/auth/authSlice";
 import Pagination from "../../components/Pagination";
 
@@ -44,6 +48,7 @@ export default function Services() {
   const initialSubCategoryId = searchParams.get("subCategoryId") || searchParams.get("subcategoryId") || "";
   const initialCountryId = searchParams.get("countryId") || searchParams.get("country") || "";
   const initialRegionId = searchParams.get("regionId") || searchParams.get("region") || "";
+  const initialCityId = searchParams.get("cityId") || searchParams.get("city") || "";
   const initialPage = Number(searchParams.get("page") || 1) || 1;
 
   const services = useSelector(selectServices);
@@ -61,6 +66,9 @@ export default function Services() {
   const regions = useSelector(selectRegions);
   const regionsLoading = useSelector(selectRegionsLoading);
   const regionsError = useSelector(selectRegionsError);
+  const cities = useSelector(selectCities);
+  const citiesLoading = useSelector(selectCitiesLoading);
+  const citiesError = useSelector(selectCitiesError);
 
   const [minPrice, setMinPrice] = useState(0);
   const [maxPrice, setMaxPrice] = useState(5000);
@@ -74,6 +82,7 @@ export default function Services() {
   const [currentPage, setCurrentPage] = useState(initialPage > 0 ? initialPage : 1);
   const [selectedCountry, setSelectedCountry] = useState(String(initialCountryId));
   const [selectedRegion, setSelectedRegion] = useState(String(initialRegionId));
+  const [selectedCity, setSelectedCity] = useState(String(initialCityId));
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
 
   const latestMinPriceRef = useRef(minPrice);
@@ -90,12 +99,14 @@ export default function Services() {
     const nextSubCategoryId = searchParams.get("subCategoryId") || searchParams.get("subcategoryId") || "";
     const nextCountryId = searchParams.get("countryId") || searchParams.get("country") || "";
     const nextRegionId = searchParams.get("regionId") || searchParams.get("region") || "";
+    const nextCityId = searchParams.get("cityId") || searchParams.get("city") || "";
     const nextPage = Number(searchParams.get("page") || 1) || 1;
 
     setSelectedCategoryId(String(nextCategoryId));
     setSelectedSubCategoryId(String(nextSubCategoryId));
     setSelectedCountry(String(nextCountryId));
     setSelectedRegion(String(nextRegionId));
+    setSelectedCity(String(nextCityId));
     setCurrentPage(nextPage > 0 ? nextPage : 1);
   }, [searchParams]);
 
@@ -104,6 +115,12 @@ export default function Services() {
       dispatch(fetchRegionsByCountry(selectedCountry));
     }
   }, [dispatch, selectedCountry]);
+
+  useEffect(() => {
+    if (selectedRegion) {
+      dispatch(fetchCitiesByRegion(selectedRegion));
+    }
+  }, [dispatch, selectedRegion]);
 
   useEffect(() => {
     if (!selectedCategoryId) return;
@@ -130,10 +147,17 @@ export default function Services() {
   }, [regionsError]);
 
   useEffect(() => {
+    if (citiesError) {
+      console.error(citiesError);
+    }
+  }, [citiesError]);
+
+  useEffect(() => {
     const params = {
       categoryId: selectedCategoryId || undefined,
       subCategoryId: selectedSubCategoryId || undefined,
       countryId: selectedCountry || undefined,
+      cityId: selectedCity || undefined,
       regionId: selectedRegion || undefined,
       priceRange: selectedPriceRange !== "all" ? selectedPriceRange : undefined,
       minPrice: appliedMinPrice,
@@ -151,6 +175,7 @@ export default function Services() {
     selectedSubCategoryId,
     selectedCountry,
     selectedRegion,
+    selectedCity,
     selectedPriceRange,
     appliedMinPrice,
     appliedMaxPrice,
@@ -266,6 +291,7 @@ export default function Services() {
     setSelectedSubCategoryId("");
     setSelectedCountry("");
     setSelectedRegion("");
+    setSelectedCity("");
     setCurrentPage(1);
   };
 
@@ -274,6 +300,7 @@ export default function Services() {
     Boolean(selectedSubCategoryId) ||
     Boolean(selectedCountry) ||
     Boolean(selectedRegion) ||
+    Boolean(selectedCity) ||
     appliedMinPrice > 0 ||
     appliedMaxPrice < 5000 ||
     selectedPriceRange !== "all";
@@ -284,6 +311,12 @@ export default function Services() {
   const handleCountryChange = (value) => {
     setSelectedCountry(value);
     setSelectedRegion("");
+    setSelectedCity("");
+    setCurrentPage(1);
+  };
+
+  const handleCityChange = (value) => {
+    setSelectedCity(value);
     setCurrentPage(1);
   };
 
@@ -540,6 +573,23 @@ export default function Services() {
                     {regions.map((region) => (
                       <option key={region.id} value={region.id}>
                         {region.name}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+                </div>
+
+                <div className="relative flex-1 sm:flex-none">
+                  <select
+                    value={selectedCity}
+                    onChange={(e) => handleCityChange(e.target.value)}
+                    disabled={!selectedRegion || citiesLoading}
+                    className="w-full appearance-none text-base border border-gray-300 rounded px-3 py-2 pr-7 text-gray-700 bg-[#FDF2EB] focus:outline-none cursor-pointer disabled:opacity-70"
+                  >
+                    <option value="">{selectedRegion ? "Select City" : "City"}</option>
+                    {cities.map((city) => (
+                      <option key={city.id} value={city.id}>
+                        {city.name}
                       </option>
                     ))}
                   </select>

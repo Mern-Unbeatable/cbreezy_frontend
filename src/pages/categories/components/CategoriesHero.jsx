@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Search } from "lucide-react";
 import CategoriesHeroImg from "/Categories/CategoriesHero.png";
+import EcoFriendlyImg from "/Eco-Friendly.webp";
 
 const CategoriesHero = ({ onSearch }) => {
   const [searchInput, setSearchInput] = useState("");
@@ -12,16 +13,24 @@ const CategoriesHero = ({ onSearch }) => {
   };
 
   return (
-    <section className="relative w-full flex flex-col items-center justify-center overflow-hidden min-h-112.5">
+    <section className="relative w-full overflow-hidden sm:min-h-150">
       
-      {/* Background image using Tailwind's arbitrary values */}
+      {/* Desktop background image */}
       <div
-        className="absolute inset-0 z-0 bg-center bg-cover bg-no-repeat"
+        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat hidden sm:block"
         style={{ backgroundImage: `url('${CategoriesHeroImg}')` }}
       />
 
-      {/* Content */}
-      <div className="relative z-10 flex flex-col items-center w-full px-4 pt-12 pb-10">
+      {/* Mobile image — in flow so section height = image height */}
+      <img
+        src={EcoFriendlyImg}
+        alt=""
+        aria-hidden="true"
+        className="w-full block sm:hidden"
+      />
+
+      {/* Content — absolute overlay on mobile, centered on desktop */}
+      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center w-full px-4 pt-12 pb-10">
         
         {/* Title with Fluid Font Size and Text Shadow */}
         <h1 className="text-white font-bold mb-8 text-center font-poppins drop-shadow-[0_2px_16px_rgba(0,0,0,0.3)] text-[1.5rem] sm:text-[3vw] lg:text-[2.5rem]">
