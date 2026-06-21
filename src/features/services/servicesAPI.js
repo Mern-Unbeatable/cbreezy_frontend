@@ -52,6 +52,7 @@ const normalizeServiceItem = (item) => ({
   contactPhone: item?.contactPhone ?? item?.phone ?? "",
   status: normalizeServiceStatus(item?.status ?? item?.serviceStatus ?? item?.listingStatus ?? item?.approvalStatus),
   showRenew: Boolean(item?.showRenew ?? item?.isRenewable),
+  payments: Array.isArray(item?.payments) ? item.payments : [],
 });
 
 const normalizeServices = (payload) => {
@@ -120,11 +121,16 @@ const toImageArray = (value) => {
 const normalizeServiceDetail = (payload) => {
   const item = payload?.data || payload?.result || payload;
 
-  const image = item?.image ?? item?.imageUrl ?? item?.thumbnail ?? "";
-  const mainImage = item?.mainImage ?? item?.main_image ?? item?.mainImageUrl ?? item?.main_image_url ?? "";
-  const serviceImages = toImageArray(item?.serviceImages || item?.service_images || item?.images || item?.gallery || []);
-  const thumbnails = toImageArray(item?.thumbnails || item?.images || item?.gallery || []);
-  const galleryImages = toImageArray(item?.galleryImages || item?.gallery || item?.images || []);
+  const serviceImages = toImageArray(
+    item?.serviceImages || item?.thumbnails || item?.images || []
+  );
+  const galleryImages = toImageArray(item?.gallery || item?.galleryImages || []);
+  const image =
+    serviceImages[0] ||
+    item?.image ||
+    item?.imageUrl ||
+    item?.thumbnail ||
+    "";
   const categoryName = item?.category?.name ?? item?.categoryName ?? item?.category ?? "";
   const subCategoryName = item?.subCategory?.name ?? item?.subCategoryName ?? item?.subCategory ?? "";
   const location =
@@ -143,11 +149,8 @@ const normalizeServiceDetail = (payload) => {
     category: categoryName,
     subCategory: subCategoryName,
     image,
-    mainImage: mainImage || image,
-    serviceImages,
-    gallery: galleryImages,
-    thumbnails: thumbnails.length > 0 ? thumbnails : image ? [image] : [],
-    galleryImages: galleryImages.length > 0 ? galleryImages : thumbnails,
+    thumbnails: serviceImages.length > 0 ? serviceImages : image ? [image] : [],
+    galleryImages,
     features: Array.isArray(item?.features)
       ? item.features.map(normalizeFeatureItem)
       : Array.isArray(item?.benefits)
@@ -326,6 +329,9 @@ export const fetchPricingPlansEligibilityAPI = async () => {
   const source = response?.data?.data || response?.data?.result || response?.data || {};
   const isUnderFirstThreeMonths = Boolean(source?.isUnderFirstThreeMonths);
   const introductoryPlanId = String(source?.introductoryPlanId || source?.introductoryPlan?.id || "");
+  const userLifecycle = source?.userLifecycle || {};
+  const isEligibleForFree = Boolean(userLifecycle?.isEligibleForFree);
+  const isEligibleForDiscount = Boolean(userLifecycle?.isEligibleForDiscount);
 
   let rawPlans = normalizeList(response.data);
 
@@ -346,6 +352,9 @@ export const fetchPricingPlansEligibilityAPI = async () => {
     introductoryPlanId,
     stripePublishableKey: source?.stripePublishableKey || "",
     stripeCurrency: source?.stripeCurrency || source?.currency || "",
+    userLifecycle,
+    isEligibleForFree,
+    isEligibleForDiscount,
   };
 };
 

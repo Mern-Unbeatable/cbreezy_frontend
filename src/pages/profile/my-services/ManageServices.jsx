@@ -3,7 +3,6 @@ import { Search, Edit2, Trash2, RefreshCw } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import CreateServiceModal from "./CreateServiceModal";
-import EditServiceModal from "./EditServiceModal";
 import PricingModal from "./PricingModal";
 import ExpiredServicesGrid from "./ExpiredServicesGrid";
 import SuspendedServicesGrid from "./SuspendedServicesGrid";
@@ -11,20 +10,14 @@ import Pagination from "../../../components/Pagination";
 import {
   deleteMyService,
   fetchMyServices,
+  fetchPricingPlansEligibility,
+  purchaseService,
   selectMyServices,
   selectMyServicesError,
   selectMyServicesLoading,
   selectMyServicesPagination,
-  updateMyService,
 } from "../../../features/services/servicesSlice";
 
-const toApiStatus = (value) => {
-  const status = String(value || "").trim().toUpperCase();
-  if (status === "EXPIRED" || status === "SUSPENDED" || status === "ACTIVE") {
-    return status;
-  }
-  return "ACTIVE";
-};
 
 function StatusBadge({ status }) {
   const colors = {
@@ -35,7 +28,7 @@ function StatusBadge({ status }) {
 
   return (
     <span
-      className={`absolute bottom-0 left-1.5 sm:bottom-0 sm:left-2 rounded-bl-sm px-1 sm:px-1.5 py-0.5 text-[7px] sm:text-[9px] font-medium uppercase tracking-wide text-white ${
+      className={`absolute bottom-0 left-1.5 sm:bottom-0 sm:left- rounded-bl-sm px-1 sm:px-1.5 py-0.5 text-[7px] sm:text-[9px] font-medium uppercase tracking-wide text-white ${
         colors[status] ?? "bg-[#6B7280]"
       }`}
     >
@@ -44,7 +37,12 @@ function StatusBadge({ status }) {
   );
 }
 
-function ServiceCard({ service, onEdit, onDelete, onRenew }) {
+function ServiceCard({ service, onEdit, onDelete, onRenew, onPay }) {
+  const [isActivating, setIsActivating] = useState(false);
+  const isUnpaid =
+    !Array.isArray(service?.payments) ||
+    service.payments.length === 0 ||
+    String(service.payments[0]?.status || "").toUpperCase() !== "SUCCESS";
   return (
     <div className="flex h-full min-h-[330px] sm:min-h-[360px] md:min-h-[400px] flex-col overflow-hidden rounded-lg sm:rounded-[10px] border border-[#EAEAEA] bg-[#FDF2EB] shadow-[0_1px_0_rgba(0,0,0,0.04)]">
       <div className="relative px-1.5 sm:px-2 pt-1.5 sm:pt-2">
@@ -99,6 +97,33 @@ function ServiceCard({ service, onEdit, onDelete, onRenew }) {
             </button>
           ) : (
             <div className="flex gap-1.5 sm:gap-2">
+              {isUnpaid && (
+                <button
+                  type="button"
+                  disabled={isActivating}
+                  onClick={async () => {
+                    setIsActivating(true);
+                    try {
+                      await onPay(service.id);
+                    } finally {
+                      setIsActivating(false);
+                    }
+                  }}
+                  className="flex flex-1 items-center justify-center gap-1 sm:gap-1.5 rounded-md border border-[#0f6e6a] bg-[#FFEFD6] py-1.5 sm:py-2 text-xs sm:text-sm md:text-base font-semibold text-[#0f6e6a] disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {isActivating ? (
+                    <>
+                      <svg className="animate-spin h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#0f6e6a]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                      </svg>
+                      Processing...
+                    </>
+                  ) : (
+                    "Activate"
+                  )}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => onEdit(service.id)}
@@ -138,7 +163,7 @@ export default function ManageServices() {
   const [pricingActionType, setPricingActionType] = useState("purchase");
   const [editingService, setEditingService] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 20;
+  const itemsPerPage = 8;
 
   useEffect(() => {
     if (isCreateModalOpen) return;
@@ -190,29 +215,6 @@ export default function ManageServices() {
     setIsEditModalOpen(true);
   };
 
-  const handleSaveEditedService = async (updatedService) => {
-    try {
-      await dispatch(
-        updateMyService({
-          serviceId: updatedService.id,
-          payload: {
-            title: updatedService.title?.trim() || undefined,
-            description: updatedService.description?.trim() || undefined,
-            contactEmail: updatedService.email?.trim() || undefined,
-            contactPhone: updatedService.phone?.trim() || undefined,
-            status: toApiStatus(updatedService.status),
-          },
-        })
-      ).unwrap();
-
-      setIsEditModalOpen(false);
-      setEditingService(null);
-      toast.success("Service updated successfully");
-    } catch (error) {
-      toast.error(error || "Failed to update service");
-    }
-  };
-
   const handleCloseEditModal = () => {
     setIsEditModalOpen(false);
     setEditingService(null);
@@ -238,6 +240,72 @@ export default function ManageServices() {
     setPricingServiceId(String(serviceId || ""));
     setPricingActionType(actionType);
     setIsPricingModalOpen(true);
+  };
+
+  const handlePayActivate = async (serviceId) => {
+    try {
+      const cancelUrl = `${window.location.origin}/profile/my-services?purchase=cancelled`;
+
+      const elig = await dispatch(fetchPricingPlansEligibility()).unwrap();
+      const plans = elig?.plans || [];
+      const userLifecycle = elig?.userLifecycle || {};
+      const freePlan = plans.find((p) => String(p.title || "").toLowerCase() === "free activation");
+      const promoPlan = plans.find((p) => String(p.title || "").toLowerCase() === "intro pricing");
+      const standardPlan = plans.find((p) => String(p.title || "").toLowerCase() === "standard pricing");
+
+      let planId = "";
+      if (userLifecycle?.isEligibleForFree) {
+        planId = freePlan?.id || promoPlan?.id || standardPlan?.id || (plans[0] && plans[0].id);
+      } else if (userLifecycle?.isEligibleForDiscount) {
+        planId = promoPlan?.id || standardPlan?.id || (plans[0] && plans[0].id);
+      } else {
+        planId = standardPlan?.id || promoPlan?.id || (plans[0] && plans[0].id);
+      }
+
+      if (!planId) {
+        toast.error("No pricing plan available for purchase");
+        return;
+      }
+
+      const successUrl = `${window.location.origin}/profile/my-services/purchase-success?serviceId=${encodeURIComponent(
+        serviceId
+      )}&planId=${encodeURIComponent(planId)}&flow=purchase&session_id={CHECKOUT_SESSION_ID}`;
+
+      const result = await dispatch(purchaseService({ serviceId, payload: { planId, successUrl, cancelUrl } })).unwrap();
+
+      const checkoutUrl = result?.checkoutUrl || result?.raw?.data?.checkoutUrl;
+      const noPaymentRequired = result?.raw?.data?.noPaymentRequired || result?.noPaymentRequired || false;
+      const checkoutSessionId =
+        result?.checkoutSessionId ||
+        result?.raw?.data?.checkoutSessionId ||
+        result?.raw?.data?.sessionId ||
+        "";
+
+      if (noPaymentRequired) {
+        toast.success("Activated for free");
+        dispatch(fetchMyServices({ page: currentPage, limit: itemsPerPage }));
+        return;
+      }
+
+      if (checkoutUrl) {
+        sessionStorage.setItem(
+          "servicePaymentConfirmContext",
+          JSON.stringify({
+            serviceId: String(serviceId),
+            planId,
+            checkoutSessionId,
+            flow: "purchase",
+            createdAt: Date.now(),
+          })
+        );
+        window.location.assign(checkoutUrl);
+        return;
+      }
+
+      toast.error("Unexpected purchase response");
+    } catch (err) {
+      toast.error(err || "Failed to start payment");
+    }
   };
 
   return (
@@ -302,7 +370,7 @@ export default function ManageServices() {
           ) : activeFilter === "Suspended" ? (
             <SuspendedServicesGrid services={filtered} />
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
               {filtered.map((service) => (
                 <ServiceCard
                   key={service.id}
@@ -310,6 +378,7 @@ export default function ManageServices() {
                   onEdit={handleEditService}
                   onDelete={handleDeleteService}
                   onRenew={(serviceId) => handleOpenPricingModal(serviceId, "renew")}
+                  onPay={handlePayActivate}
                 />
               ))}
             </div>
@@ -334,13 +403,14 @@ export default function ManageServices() {
       <CreateServiceModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
+        onSaved={() => dispatch(fetchMyServices({ page: currentPage, limit: itemsPerPage }))}
       />
 
-      <EditServiceModal
+      <CreateServiceModal
         isOpen={isEditModalOpen}
-        service={editingService}
+        editService={editingService}
         onClose={handleCloseEditModal}
-        onSave={handleSaveEditedService}
+        onSaved={() => dispatch(fetchMyServices({ page: currentPage, limit: itemsPerPage }))}
       />
 
       <PricingModal
