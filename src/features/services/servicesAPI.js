@@ -121,6 +121,8 @@ const normalizeServiceDetail = (payload) => {
   const item = payload?.data || payload?.result || payload;
 
   const image = item?.image ?? item?.imageUrl ?? item?.thumbnail ?? "";
+  const mainImage = item?.mainImage ?? item?.main_image ?? item?.mainImageUrl ?? item?.main_image_url ?? "";
+  const serviceImages = toImageArray(item?.serviceImages || item?.service_images || item?.images || item?.gallery || []);
   const thumbnails = toImageArray(item?.thumbnails || item?.images || item?.gallery || []);
   const galleryImages = toImageArray(item?.galleryImages || item?.gallery || item?.images || []);
   const categoryName = item?.category?.name ?? item?.categoryName ?? item?.category ?? "";
@@ -141,6 +143,9 @@ const normalizeServiceDetail = (payload) => {
     category: categoryName,
     subCategory: subCategoryName,
     image,
+    mainImage: mainImage || image,
+    serviceImages,
+    gallery: galleryImages,
     thumbnails: thumbnails.length > 0 ? thumbnails : image ? [image] : [],
     galleryImages: galleryImages.length > 0 ? galleryImages : thumbnails,
     features: Array.isArray(item?.features)

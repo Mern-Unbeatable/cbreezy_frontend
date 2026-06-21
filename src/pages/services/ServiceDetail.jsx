@@ -10,6 +10,7 @@ import {
   reportServiceSpam,
   selectServiceDetail,
   selectServiceDetailError,
+  selectServiceDetailLoading,
   selectServiceReportSpamError,
   selectServiceReportSpamLoading,
 } from "../../features/services/servicesSlice";
@@ -21,6 +22,7 @@ export default function ServiceDetail() {
   const [mainImage, setMainImage] = useState(null);
   const service = useSelector(selectServiceDetail);
   const serviceError = useSelector(selectServiceDetailError);
+  const serviceLoading = useSelector(selectServiceDetailLoading);
   const reportSpamLoading = useSelector(selectServiceReportSpamLoading);
   const reportSpamError = useSelector(selectServiceReportSpamError);
 
@@ -72,6 +74,17 @@ export default function ServiceDetail() {
     );
   }
 
+  if (serviceLoading || (!service && id)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4" />
+          <p className="text-gray-600">Loading service...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!service) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -86,15 +99,37 @@ export default function ServiceDetail() {
   }
 
   const {
-    title, price, location, category, subCategory, image,
-    description, thumbnails, galleryImages, features,
+    title,
+    price,
+    location,
+    category,
+    subCategory,
+    image: imageFromApi,
+    mainImage: mainImageFromApi,
+    serviceImages,
+    gallery: galleryFromApi,
+    description,
+    thumbnails,
+    galleryImages,
+    features,
     serviceTargets,
     commonServices,
     provider,
   } = service;
 
-  const thumbnailList = Array.isArray(thumbnails) && thumbnails.length > 0 ? thumbnails : image ? [image] : [];
-  const galleryList = Array.isArray(galleryImages) && galleryImages.length > 0 ? galleryImages : thumbnailList;
+  // Determine lists in a way that supports both the old and new API shapes
+  const thumbnailList =
+    (Array.isArray(serviceImages) && serviceImages.length > 0 && serviceImages) ||
+    (Array.isArray(thumbnails) && thumbnails.length > 0 && thumbnails) ||
+    (imageFromApi ? [imageFromApi] : mainImageFromApi ? [mainImageFromApi] : []);
+
+  const galleryList =
+    (Array.isArray(galleryFromApi) && galleryFromApi.length > 0 && galleryFromApi) ||
+    (Array.isArray(galleryImages) && galleryImages.length > 0 && galleryImages) ||
+    (Array.isArray(serviceImages) && serviceImages.length > 0 && serviceImages) ||
+    [];
+
+  const primaryImage = mainImageFromApi || imageFromApi || (Array.isArray(serviceImages) && serviceImages[0]) || (Array.isArray(galleryFromApi) && galleryFromApi[0]) || "";
   const featuresList = Array.isArray(features) ? features : [];
   const targetsList = Array.isArray(serviceTargets) ? serviceTargets : [];
   const commonServicesList = Array.isArray(commonServices) ? commonServices : [];
@@ -117,7 +152,7 @@ export default function ServiceDetail() {
           {/* Left: Images */}
           <div>
             <div className="w-full aspect-4/3 rounded-sm overflow-hidden mb-4 bg-gray-100">
-              <img src={mainImage || image} alt={title} className="w-full h-full object-cover" />
+              <img src={mainImage || primaryImage} alt={title} className="w-full h-full object-cover" />
             </div>
             <div className="flex gap-2 w-full">
               {thumbnailList.map((src, i) => (
@@ -229,7 +264,7 @@ export default function ServiceDetail() {
               <div className="h-24 bg-[#025955]"></div>
               <div className="px-5 pb-5">
                 <div className="relative -mt-9 mb-4 inline-block">
-                  <img src={provider?.avatar || image} className="w-14 h-14 rounded-lg object-cover border-2 border-white shadow-sm" alt={provider?.name || "Provider"} />
+                  <img src={provider?.avatar || imageFromApi || primaryImage} className="w-14 h-14 rounded-lg object-cover border-2 border-white shadow-sm" alt={provider?.name || "Provider"} />
                 </div>
                 <h3 className="text-3xl font-bold text-gray-900 leading-tight">{provider?.name || "Service Provider"}</h3>
                 <p className="text-lg text-gray-500 mb-4">{provider?.title || "Provider"}</p>
