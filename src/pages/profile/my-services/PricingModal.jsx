@@ -3,30 +3,38 @@ import { X } from "lucide-react";
 import { toast } from "react-toastify";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  clearEventPricingState,
-  fetchEventPricingPlansEligibility,
-  purchaseEvent,
-  renewEvent,
-  selectEventPricingEligibility,
-  selectEventPricingPlans,
-  selectEventPricingPlansError,
-  selectEventPricingPlansLoading,
-  selectEventPurchaseError,
-  selectEventPurchaseLoading,
-  selectEventRenewError,
-  selectEventRenewLoading,
-} from "../../../features/events/eventsSlice";
+  clearPricingState,
+  fetchPricingPlansEligibility,
+  purchaseService,
+  renewService,
+  selectPricingEligibility,
+  selectPricingPlans,
+  selectPricingPlansError,
+  selectPricingPlansLoading,
+  selectServicePurchaseError,
+  selectServicePurchaseLoading,
+  selectServiceRenewError,
+  selectServiceRenewLoading,
+} from "../../../features/services/servicesSlice";
 
-export default function PricingModal({ isOpen, onClose, eventId, actionType = "purchase", forcePlanId = "", lockSelection = false, hideFreePlans = false }) {
+export default function PricingModal({
+  isOpen,
+  onClose,
+  serviceId,
+  actionType = "purchase",
+  forcePlanId = "",
+  lockSelection = false,
+  hideFreePlans = false,
+}) {
   const dispatch = useDispatch();
-  const plans = useSelector(selectEventPricingPlans);
-  const pricingEligibility = useSelector(selectEventPricingEligibility);
-  const pricingLoading = useSelector(selectEventPricingPlansLoading);
-  const pricingError = useSelector(selectEventPricingPlansError);
-  const purchaseLoading = useSelector(selectEventPurchaseLoading);
-  const purchaseError = useSelector(selectEventPurchaseError);
-  const renewLoading = useSelector(selectEventRenewLoading);
-  const renewError = useSelector(selectEventRenewError);
+  const plans = useSelector(selectPricingPlans);
+  const pricingEligibility = useSelector(selectPricingEligibility);
+  const pricingLoading = useSelector(selectPricingPlansLoading);
+  const pricingError = useSelector(selectPricingPlansError);
+  const purchaseLoading = useSelector(selectServicePurchaseLoading);
+  const purchaseError = useSelector(selectServicePurchaseError);
+  const renewLoading = useSelector(selectServiceRenewLoading);
+  const renewError = useSelector(selectServiceRenewError);
   const [selected, setSelected] = useState("");
   const onCloseRef = useRef(onClose);
   const isRenewFlow = actionType === "renew";
@@ -51,6 +59,55 @@ export default function PricingModal({ isOpen, onClose, eventId, actionType = "p
   const lowestPlanId = lockToLowestPlan ? pickLowestPricePlanId(plans) : "";
   const forcedPlanId = String(forcePlanId || "");
 
+  const getVisiblePlans = (list) =>
+    hideFreePlans
+      ? list.filter((p) => String(p?.tier || "").toLowerCase() !== "free" && Number(p?.price || 0) !== 0)
+      : list;
+
+  const findIntroPlanId = (list) => {
+    const introPlan =
+      list.find((p) => p.isIntroductory) ||
+      list.find((p) => String(p?.title || "").toLowerCase().includes("intro"));
+    return String(introPlan?.id || pricingEligibility?.introductoryPlanId || lowestPlanId || "");
+  };
+
+  const findStandardPlanId = (list) => {
+    const standardPlan =
+      list.find((p) => String(p?.title || "").toLowerCase().includes("standard")) ||
+      list.find((p) => !p.isIntroductory && Number(p?.price || 0) > 0);
+    return String(standardPlan?.id || "");
+  };
+
+  const resolveEligibilityLockedPlanId = (list) => {
+    if (!list.length) return "";
+
+    const isEligibleForFree = Boolean(
+      pricingEligibility?.isEligibleForFree || pricingEligibility?.userLifecycle?.isEligibleForFree
+    );
+    const isEligibleForDiscount = Boolean(
+      pricingEligibility?.isEligibleForDiscount || pricingEligibility?.userLifecycle?.isEligibleForDiscount
+    );
+
+    if (lockToLowestPlan && lowestPlanId) {
+      return lowestPlanId;
+    }
+
+    if (!isEligibleForFree && isEligibleForDiscount) {
+      return findIntroPlanId(list);
+    }
+
+    if (!isEligibleForFree && !isEligibleForDiscount) {
+      return findStandardPlanId(list);
+    }
+
+    return "";
+  };
+
+  const visiblePlans = getVisiblePlans(plans);
+  const eligibilityLockedPlanId = resolveEligibilityLockedPlanId(visiblePlans);
+  const effectiveForcedPlanId = forcedPlanId || eligibilityLockedPlanId;
+  const effectiveLockSelection = lockSelection || Boolean(eligibilityLockedPlanId);
+
   useEffect(() => {
     onCloseRef.current = onClose;
   }, [onClose]);
@@ -58,7 +115,7 @@ export default function PricingModal({ isOpen, onClose, eventId, actionType = "p
   useEffect(() => {
     if (!isOpen) return;
 
-    dispatch(fetchEventPricingPlansEligibility());
+    dispatch(fetchPricingPlansEligibility());
     document.body.style.overflow = "hidden";
 
     const onKeyDown = (e) => {
@@ -77,7 +134,7 @@ export default function PricingModal({ isOpen, onClose, eventId, actionType = "p
 
   useEffect(() => {
     if (!isOpen) {
-      dispatch(clearEventPricingState());
+      dispatch(clearPricingState());
       setSelected("");
     }
   }, [dispatch, isOpen]);
@@ -88,19 +145,21 @@ export default function PricingModal({ isOpen, onClose, eventId, actionType = "p
       return;
     }
 
-    // hide free plans if requested
-    const visiblePlans = hideFreePlans ? plans.filter((p) => String(p?.tier || "").toLowerCase() !== "free" && Number(p?.price || 0) !== 0) : plans;
+    const nextVisiblePlans = getVisiblePlans(plans);
+    const nextEligibilityLockedPlanId = resolveEligibilityLockedPlanId(nextVisiblePlans);
+    const nextEffectiveForcedPlanId = forcedPlanId || nextEligibilityLockedPlanId;
+    const nextEffectiveLockSelection = lockSelection || Boolean(nextEligibilityLockedPlanId);
 
-    if (forcedPlanId) {
-      const exists = visiblePlans.find((p) => String(p.id) === String(forcedPlanId));
+    if (nextEffectiveForcedPlanId) {
+      const exists = nextVisiblePlans.find((p) => String(p.id) === String(nextEffectiveForcedPlanId));
       if (exists) {
-        setSelected(String(forcedPlanId));
+        setSelected(String(nextEffectiveForcedPlanId));
         return;
       }
     }
 
-    if (lockSelection && forcedPlanId) {
-      setSelected(String(forcedPlanId));
+    if (nextEffectiveLockSelection && nextEffectiveForcedPlanId) {
+      setSelected(String(nextEffectiveForcedPlanId));
       return;
     }
 
@@ -109,9 +168,17 @@ export default function PricingModal({ isOpen, onClose, eventId, actionType = "p
       return;
     }
 
-    const introductory = visiblePlans.find((plan) => plan.isIntroductory);
-    setSelected(introductory?.id || visiblePlans[0]?.id || "");
-  }, [lockToLowestPlan, lowestPlanId, plans, forcedPlanId, lockSelection, hideFreePlans]);
+    const introductory = nextVisiblePlans.find((plan) => plan.isIntroductory);
+    setSelected(introductory?.id || nextVisiblePlans[0]?.id || "");
+  }, [
+    lockToLowestPlan,
+    lowestPlanId,
+    plans,
+    forcedPlanId,
+    lockSelection,
+    hideFreePlans,
+    pricingEligibility,
+  ]);
 
   useEffect(() => {
     if (pricingError) {
@@ -126,8 +193,8 @@ export default function PricingModal({ isOpen, onClose, eventId, actionType = "p
   }, [submitError]);
 
   const handlePurchase = async () => {
-    if (!eventId) {
-      toast.error(`Event ID not found for ${isRenewFlow ? "renew" : "purchase"}`);
+    if (!serviceId) {
+      toast.error(`Service ID not found for ${isRenewFlow ? "renew" : "purchase"}`);
       return;
     }
 
@@ -136,16 +203,16 @@ export default function PricingModal({ isOpen, onClose, eventId, actionType = "p
       return;
     }
 
-    const successUrl = `${window.location.origin}/profile/my-events/purchase-success?eventId=${encodeURIComponent(
-      eventId
+    const successUrl = `${window.location.origin}/profile/my-services/purchase-success?serviceId=${encodeURIComponent(
+      serviceId
     )}&planId=${encodeURIComponent(selected)}&flow=${encodeURIComponent(actionType)}&session_id={CHECKOUT_SESSION_ID}`;
-    const cancelUrl = `${window.location.origin}/profile/my-events?${isRenewFlow ? "renew" : "purchase"}=cancelled`;
+    const cancelUrl = `${window.location.origin}/profile/my-services?${isRenewFlow ? "renew" : "purchase"}=cancelled`;
 
     try {
-      const thunk = isRenewFlow ? renewEvent : purchaseEvent;
+      const thunk = isRenewFlow ? renewService : purchaseService;
       const result = await dispatch(
         thunk({
-          eventId,
+          serviceId,
           payload: {
             planId: selected,
             successUrl,
@@ -163,9 +230,9 @@ export default function PricingModal({ isOpen, onClose, eventId, actionType = "p
       const confirmedCheckoutSessionId = result?.checkoutSessionId || "";
 
       sessionStorage.setItem(
-        "eventPaymentConfirmContext",
+        "servicePaymentConfirmContext",
         JSON.stringify({
-          eventId,
+          serviceId,
           planId: confirmedPlanId,
           checkoutSessionId: confirmedCheckoutSessionId,
           flow: actionType,
@@ -180,6 +247,8 @@ export default function PricingModal({ isOpen, onClose, eventId, actionType = "p
   };
 
   if (!isOpen) return null;
+
+  const displayPlans = visiblePlans;
 
   return (
     <div
@@ -213,13 +282,17 @@ export default function PricingModal({ isOpen, onClose, eventId, actionType = "p
         <div className="px-6 py-5 space-y-3">
           {pricingLoading && <p className="text-sm text-gray-600">Loading pricing plans...</p>}
 
-          {!pricingLoading && plans.length === 0 && (
+          {!pricingLoading && displayPlans.length === 0 && (
             <p className="text-sm text-gray-600">No active pricing plans found.</p>
           )}
 
-  {(hideFreePlans ? plans.filter((p) => String(p?.tier || "").toLowerCase() !== "free" && Number(p?.price || 0) !== 0) : plans).map((plan, index) => {
+          {displayPlans.map((plan, index) => {
             const isSelected = selected === plan.id;
-    const isOptionLocked = (lockToLowestPlan && String(plan.id) !== String(lowestPlanId)) || (lockSelection && Boolean(forcedPlanId) && String(plan.id) !== String(forcedPlanId));
+            const isOptionLocked =
+              (lockToLowestPlan && String(plan.id) !== String(lowestPlanId)) ||
+              (effectiveLockSelection &&
+                Boolean(effectiveForcedPlanId) &&
+                String(plan.id) !== String(effectiveForcedPlanId));
             return (
               <label
                 key={`${plan.id}-${plan.duration}-${index}`}

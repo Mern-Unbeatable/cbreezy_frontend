@@ -20,19 +20,23 @@ import {
 
 
 function StatusBadge({ status }) {
-  const colors = {
-    Expired: "bg-[#ED965D]",
-    Active: "bg-[#2c9b73]",
-    Suspended: "bg-[#EF4444]",
+  const key = String(status || "").trim().toUpperCase();
+
+  const styles = {
+    PENDING: "bg-gradient-to-r from-yellow-300 to-yellow-500 text-black font-bold",
+    APPROVED: "bg-gradient-to-r from-emerald-400 to-green-600 text-white font-bold",
+    SUSPENDED: "bg-gradient-to-r from-red-400 to-red-600 text-white font-bold",
+    EXPIRED: "bg-gradient-to-r from-orange-400 to-orange-600 text-white font-bold",
+    DEFAULT: "bg-gray-400 text-white font-bold",
   };
+
+  const styleClass = styles[key] || styles.DEFAULT;
 
   return (
     <span
-      className={`absolute bottom-0 left-1.5 sm:bottom-0 sm:left- rounded-bl-sm px-1 sm:px-1.5 py-0.5 text-[7px] sm:text-[9px] font-medium uppercase tracking-wide text-white ${
-        colors[status] ?? "bg-[#6B7280]"
-      }`}
+      className={`absolute bottom-1 left-3 rounded-md px-2 py-0.5 text-[9px] sm:text-[10px] font-semibold uppercase tracking-wide ${styleClass} shadow-sm`}
     >
-      {status}
+      {String(status || "").toUpperCase()}
     </span>
   );
 }
@@ -418,7 +422,7 @@ export default function ManageServices() {
         serviceId={pricingServiceId}
         actionType={pricingActionType}
         onClose={() => {
-          setIsPricingModalOpen(false);
+        setIsPricingModalOpen(false);
           setPricingServiceId("");
           setPricingActionType("purchase");
         }}

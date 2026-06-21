@@ -13,6 +13,7 @@ import {
   purchaseServiceAPI,
   reportServiceSpamAPI,
   renewServiceAPI,
+  removeMyServiceImageAPI,
   updateMyServiceAPI,
 } from "./servicesAPI";
 
@@ -60,6 +61,17 @@ export const deleteMyService = createAsyncThunk(
   async (serviceId, { rejectWithValue }) => {
     try {
       return await deleteMyServiceAPI(serviceId);
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error));
+    }
+  }
+);
+
+export const removeMyServiceImage = createAsyncThunk(
+  "services/removeMyServiceImage",
+  async ({ serviceId, imageUrl, imageType }, { rejectWithValue }) => {
+    try {
+      return await removeMyServiceImageAPI(serviceId, { imageUrl, imageType });
     } catch (error) {
       return rejectWithValue(getErrorMessage(error));
     }
@@ -354,6 +366,14 @@ const servicesSlice = createSlice({
       .addCase(deleteMyService.rejected, (state, action) => {
         state.myServicesLoading = false;
         state.myServicesError = action.payload || "Failed to delete your service";
+      })
+      .addCase(removeMyServiceImage.fulfilled, (state, action) => {
+        const updatedItem = action.payload.item;
+        if (!updatedItem?.id) return;
+
+        state.myServices = state.myServices.map((item) =>
+          String(item.id) === String(updatedItem.id) ? updatedItem : item
+        );
       })
       .addCase(fetchServiceCategories.pending, (state) => {
         state.categoriesLoading = true;

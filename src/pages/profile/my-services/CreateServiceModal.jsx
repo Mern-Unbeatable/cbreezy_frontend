@@ -6,6 +6,7 @@ import PricingModal from "./PricingModal";
 import {
   createService,
   updateMyService,
+  removeMyServiceImage,
   fetchServiceCategories,
   fetchServiceCategoryDetail,
   fetchPricingPlansEligibility,
@@ -66,8 +67,35 @@ export default function CreateServiceModal({ isOpen, onClose, editService = null
 
   const [serviceImageFiles, setServiceImageFiles] = useState([]);
   const [serviceImagePreviews, setServiceImagePreviews] = useState([]);
+  const [existingServiceImages, setExistingServiceImages] = useState([]);
   const [galleryImageFiles, setGalleryImageFiles] = useState([]);
   const [galleryImagePreviews, setGalleryImagePreviews] = useState([]);
+  const [existingGalleryImages, setExistingGalleryImages] = useState([]);
+  const [removingImageUrl, setRemovingImageUrl] = useState("");
+
+  const syncImagesFromService = (service) => {
+    setExistingServiceImages(resolveEditServiceImages(service));
+    setExistingGalleryImages(resolveEditGalleryImages(service));
+  };
+
+  const resolveEditServiceImages = (service) => {
+    if (Array.isArray(service?.serviceImages) && service.serviceImages.length > 0) {
+      return service.serviceImages;
+    }
+    if (service?.mainImage) return [service.mainImage];
+    if (service?.image) return [service.image];
+    return [];
+  };
+
+  const resolveEditGalleryImages = (service) => {
+    if (Array.isArray(service?.galleryImages) && service.galleryImages.length > 0) {
+      return service.galleryImages;
+    }
+    if (Array.isArray(service?.gallery) && service.gallery.length > 0) {
+      return service.gallery;
+    }
+    return [];
+  };
 
   const resetModalState = () => {
     setForm({
@@ -87,8 +115,11 @@ export default function CreateServiceModal({ isOpen, onClose, editService = null
     });
     setServiceImageFiles([]);
     setServiceImagePreviews([]);
+    setExistingServiceImages([]);
     setGalleryImageFiles([]);
     setGalleryImagePreviews([]);
+    setExistingGalleryImages([]);
+    setRemovingImageUrl("");
   };
 
   const subcategories = useMemo(
@@ -121,6 +152,8 @@ export default function CreateServiceModal({ isOpen, onClose, editService = null
       facebookUrl: editService.facebookUrl || "",
       instagramUrl: editService.instagramUrl || "",
     });
+    setExistingServiceImages(resolveEditServiceImages(editService));
+    setExistingGalleryImages(resolveEditGalleryImages(editService));
     setServiceImageFiles([]);
     setServiceImagePreviews([]);
     setGalleryImageFiles([]);
@@ -147,6 +180,17 @@ export default function CreateServiceModal({ isOpen, onClose, editService = null
 
     dispatch(fetchCitiesByRegion(form.regionId));
   }, [dispatch, form.regionId]);
+
+  useEffect(() => {
+    if (!isEditMode || !editService?.cityId || cities.length === 0) return;
+
+    const matchedCity = cities.some((item) => String(item.id) === String(editService.cityId));
+    if (matchedCity) {
+      setForm((prev) =>
+        prev.cityId === String(editService.cityId) ? prev : { ...prev, cityId: String(editService.cityId) }
+      );
+    }
+  }, [isEditMode, editService?.cityId, cities]);
 
   const handleCloseCreateModal = () => {
     setIsPricingOpen(false);
@@ -187,7 +231,14 @@ export default function CreateServiceModal({ isOpen, onClose, editService = null
 
   const handleServiceImageUpload = (e) => {
     const files = Array.from(e.target.files || []);
-    const remainingSlots = 4 - serviceImageFiles.length;
+    const remainingSlots = 4 - existingServiceImages.length - serviceImageFiles.length;
+
+    if (remainingSlots <= 0) {
+      toast.error("Remove an existing service image first to upload a new one");
+      e.target.value = "";
+      return;
+    }
+
     const filesToAdd = files.slice(0, remainingSlots);
 
     setServiceImageFiles((prev) => [...prev, ...filesToAdd]);
@@ -205,7 +256,14 @@ export default function CreateServiceModal({ isOpen, onClose, editService = null
 
   const handleGalleryImageUpload = (e) => {
     const files = Array.from(e.target.files || []);
-    const remainingSlots = 8 - galleryImageFiles.length;
+    const remainingSlots = 8 - existingGalleryImages.length - galleryImageFiles.length;
+
+    if (remainingSlots <= 0) {
+      toast.error("Remove an existing gallery image first to upload a new one");
+      e.target.value = "";
+      return;
+    }
+
     const filesToAdd = files.slice(0, remainingSlots);
 
     setGalleryImageFiles((prev) => [...prev, ...filesToAdd]);
@@ -229,6 +287,52 @@ export default function CreateServiceModal({ isOpen, onClose, editService = null
   const removeGalleryImage = (index) => {
     setGalleryImageFiles((prev) => prev.filter((_, i) => i !== index));
     setGalleryImagePreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const removeExistingServiceImage = async (index) => {
+    const imageUrl = existingServiceImages[index];
+    if (!imageUrl || !editService?.id) return;
+
+    setRemovingImageUrl(imageUrl);
+    try {
+      const result = await dispatch(
+        removeMyServiceImage({
+          serviceId: editService.id,
+          imageUrl,
+          imageType: "serviceImages",
+        })
+      ).unwrap();
+
+      syncImagesFromService(result?.item || {});
+      toast.success("Service image removed");
+    } catch (error) {
+      toast.error(error || "Failed to remove service image");
+    } finally {
+      setRemovingImageUrl("");
+    }
+  };
+
+  const removeExistingGalleryImage = async (index) => {
+    const imageUrl = existingGalleryImages[index];
+    if (!imageUrl || !editService?.id) return;
+
+    setRemovingImageUrl(imageUrl);
+    try {
+      const result = await dispatch(
+        removeMyServiceImage({
+          serviceId: editService.id,
+          imageUrl,
+          imageType: "gallery",
+        })
+      ).unwrap();
+
+      syncImagesFromService(result?.item || {});
+      toast.success("Gallery image removed");
+    } catch (error) {
+      toast.error(error || "Failed to remove gallery image");
+    } finally {
+      setRemovingImageUrl("");
+    }
   };
 
   const handleSubmitAndContinue = async () => {
@@ -258,7 +362,10 @@ export default function CreateServiceModal({ isOpen, onClose, editService = null
 
       setUpdateLoading(true);
       try {
-        await dispatch(updateMyService({ serviceId: editService.id, payload })).unwrap();
+        const result = await dispatch(updateMyService({ serviceId: editService.id, payload })).unwrap();
+        if (result?.item) {
+          syncImagesFromService(result.item);
+        }
         toast.success("Service updated successfully");
         if (onSaved) onSaved();
         onClose();
@@ -379,6 +486,9 @@ export default function CreateServiceModal({ isOpen, onClose, editService = null
       toast.error(error || "Failed to create service");
     }
   };
+
+  const totalServiceImages = existingServiceImages.length + serviceImageFiles.length;
+  const totalGalleryImages = existingGalleryImages.length + galleryImageFiles.length;
 
   if (!isOpen && !isPricingOpen && !isEditMode) return null;
   if (!isOpen && !isPricingOpen) return null;
@@ -544,16 +654,32 @@ export default function CreateServiceModal({ isOpen, onClose, editService = null
               </div>
 
               <div>
-                <h3 className="text-base text-[#0C0C0C] font-semibold mb-3">
-                  Service Image ({serviceImageFiles.length}/4){isEditMode && " — upload new to replace"}
+                <h3 className="text-base text-[#0C0C0C] font-semibold mb-1">
+                  Service Image ({totalServiceImages}/4)
                 </h3>
-                {isEditMode && editService?.image && serviceImageFiles.length === 0 && (
-                  <div className="mb-2 flex items-center gap-3">
-                    <img src={editService.image} alt="current" className="h-16 w-16 rounded object-cover border border-gray-200" />
-                    <span className="text-xs text-gray-500">Current image</span>
-                  </div>
+                {isEditMode && (
+                  <p className="text-xs text-gray-500 mb-3">
+                    Tap the X on an image to remove it, then use Upload to add a replacement.
+                  </p>
                 )}
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-3">
+                  {existingServiceImages.map((src, i) => (
+                    <div key={`existing-service-${src}`} className="relative aspect-square rounded overflow-hidden bg-gray-100">
+                      <img src={src} alt={`service-existing-${i}`} className="w-full h-full object-cover" />
+                      {isEditMode && (
+                        <button
+                          type="button"
+                          onClick={() => removeExistingServiceImage(i)}
+                          disabled={Boolean(removingImageUrl)}
+                          className="absolute top-1.5 right-1.5 rounded-full bg-black/70 p-1 text-white hover:bg-black transition disabled:opacity-50 disabled:cursor-not-allowed"
+                          aria-label="Remove service image"
+                        >
+                          <X size={14} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+
                   {serviceImagePreviews.map((src, i) => (
                     <div key={i} className="relative aspect-square rounded overflow-hidden bg-gray-100">
                       <img src={src} alt={`service-${i}`} className="w-full h-full object-cover" />
@@ -566,7 +692,7 @@ export default function CreateServiceModal({ isOpen, onClose, editService = null
                     </div>
                   ))}
 
-                  {serviceImageFiles.length < 4 && (
+                  {totalServiceImages < 4 && (
                     <label className="aspect-square rounded border-2 border-dashed border-orange-300 flex items-center justify-center cursor-pointer hover:border-orange-500 hover:bg-orange-50 transition">
                       <div className="text-center">
                         <Upload size={20} className="text-orange-400 mx-auto mb-1" />
@@ -635,8 +761,32 @@ export default function CreateServiceModal({ isOpen, onClose, editService = null
               </div>
 
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 mb-3">Service Gallery ({galleryImageFiles.length}/8)</h3>
+                <h3 className="text-sm font-semibold text-gray-700 mb-1">
+                  Service Gallery ({totalGalleryImages}/8)
+                </h3>
+                {isEditMode && (
+                  <p className="text-xs text-gray-500 mb-3">
+                    Tap the X on an image to remove it, then use Upload to add a replacement.
+                  </p>
+                )}
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-3">
+                  {existingGalleryImages.map((src, i) => (
+                    <div key={`existing-gallery-${src}`} className="relative aspect-square rounded overflow-hidden bg-gray-100">
+                      <img src={src} alt={`gallery-existing-${i}`} className="w-full h-full object-cover" />
+                      {isEditMode && (
+                        <button
+                          type="button"
+                          onClick={() => removeExistingGalleryImage(i)}
+                          disabled={Boolean(removingImageUrl)}
+                          className="absolute top-1.5 right-1.5 rounded-full bg-black/70 p-1 text-white hover:bg-black transition disabled:opacity-50 disabled:cursor-not-allowed"
+                          aria-label="Remove gallery image"
+                        >
+                          <X size={14} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+
                   {galleryImagePreviews.map((src, i) => (
                     <div key={i} className="relative aspect-square rounded overflow-hidden bg-gray-100">
                       <img src={src} alt={`gallery-${i}`} className="w-full h-full object-cover" />
@@ -649,7 +799,7 @@ export default function CreateServiceModal({ isOpen, onClose, editService = null
                     </div>
                   ))}
 
-                  {galleryImageFiles.length < 8 && (
+                  {totalGalleryImages < 8 && (
                     <label className="aspect-square rounded border-2 border-dashed border-orange-300 flex items-center justify-center cursor-pointer hover:border-orange-500 hover:bg-orange-50 transition">
                       <div className="text-center">
                         <Upload size={20} className="text-orange-400 mx-auto mb-1" />

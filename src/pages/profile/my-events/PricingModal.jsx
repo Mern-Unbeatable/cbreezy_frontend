@@ -17,7 +17,15 @@ import {
   selectEventRenewLoading,
 } from "../../../features/events/eventsSlice";
 
-export default function PricingModal({ isOpen, onClose, eventId, actionType = "purchase" }) {
+export default function PricingModal({
+  isOpen,
+  onClose,
+  eventId,
+  actionType = "purchase",
+  forcePlanId = "",
+  lockSelection = false,
+  hideFreePlans = false,
+}) {
   const dispatch = useDispatch();
   const plans = useSelector(selectEventPricingPlans);
   const pricingEligibility = useSelector(selectEventPricingEligibility);
@@ -49,6 +57,56 @@ export default function PricingModal({ isOpen, onClose, eventId, actionType = "p
 
   const lockToLowestPlan = Boolean(pricingEligibility?.isUnderFirstThreeMonths);
   const lowestPlanId = lockToLowestPlan ? pickLowestPricePlanId(plans) : "";
+  const forcedPlanId = String(forcePlanId || "");
+
+  const getVisiblePlans = (list) =>
+    hideFreePlans
+      ? list.filter((p) => String(p?.tier || "").toLowerCase() !== "free" && Number(p?.price || 0) !== 0)
+      : list;
+
+  const findIntroPlanId = (list) => {
+    const introPlan =
+      list.find((p) => p.isIntroductory) ||
+      list.find((p) => String(p?.title || "").toLowerCase().includes("intro"));
+    return String(introPlan?.id || pricingEligibility?.introductoryPlanId || lowestPlanId || "");
+  };
+
+  const findStandardPlanId = (list) => {
+    const standardPlan =
+      list.find((p) => String(p?.title || "").toLowerCase().includes("standard")) ||
+      list.find((p) => !p.isIntroductory && Number(p?.price || 0) > 0);
+    return String(standardPlan?.id || "");
+  };
+
+  const resolveEligibilityLockedPlanId = (list) => {
+    if (!list.length) return "";
+
+    const isEligibleForFree = Boolean(
+      pricingEligibility?.isEligibleForFree || pricingEligibility?.userLifecycle?.isEligibleForFree
+    );
+    const isEligibleForDiscount = Boolean(
+      pricingEligibility?.isEligibleForDiscount || pricingEligibility?.userLifecycle?.isEligibleForDiscount
+    );
+
+    if (lockToLowestPlan && lowestPlanId) {
+      return lowestPlanId;
+    }
+
+    if (!isEligibleForFree && isEligibleForDiscount) {
+      return findIntroPlanId(list);
+    }
+
+    if (!isEligibleForFree && !isEligibleForDiscount) {
+      return findStandardPlanId(list);
+    }
+
+    return "";
+  };
+
+  const visiblePlans = getVisiblePlans(plans);
+  const eligibilityLockedPlanId = resolveEligibilityLockedPlanId(visiblePlans);
+  const effectiveForcedPlanId = forcedPlanId || eligibilityLockedPlanId;
+  const effectiveLockSelection = lockSelection || Boolean(eligibilityLockedPlanId);
 
   useEffect(() => {
     onCloseRef.current = onClose;
@@ -87,14 +145,40 @@ export default function PricingModal({ isOpen, onClose, eventId, actionType = "p
       return;
     }
 
+    const nextVisiblePlans = getVisiblePlans(plans);
+    const nextEligibilityLockedPlanId = resolveEligibilityLockedPlanId(nextVisiblePlans);
+    const nextEffectiveForcedPlanId = forcedPlanId || nextEligibilityLockedPlanId;
+    const nextEffectiveLockSelection = lockSelection || Boolean(nextEligibilityLockedPlanId);
+
+    if (nextEffectiveForcedPlanId) {
+      const exists = nextVisiblePlans.find((p) => String(p.id) === String(nextEffectiveForcedPlanId));
+      if (exists) {
+        setSelected(String(nextEffectiveForcedPlanId));
+        return;
+      }
+    }
+
+    if (nextEffectiveLockSelection && nextEffectiveForcedPlanId) {
+      setSelected(String(nextEffectiveForcedPlanId));
+      return;
+    }
+
     if (lockToLowestPlan && lowestPlanId) {
       setSelected(lowestPlanId);
       return;
     }
 
-    const introductory = plans.find((plan) => plan.isIntroductory);
-    setSelected(introductory?.id || plans[0]?.id || "");
-  }, [lockToLowestPlan, lowestPlanId, plans]);
+    const introductory = nextVisiblePlans.find((plan) => plan.isIntroductory);
+    setSelected(introductory?.id || nextVisiblePlans[0]?.id || "");
+  }, [
+    lockToLowestPlan,
+    lowestPlanId,
+    plans,
+    forcedPlanId,
+    lockSelection,
+    hideFreePlans,
+    pricingEligibility,
+  ]);
 
   useEffect(() => {
     if (pricingError) {
@@ -164,6 +248,8 @@ export default function PricingModal({ isOpen, onClose, eventId, actionType = "p
 
   if (!isOpen) return null;
 
+  const displayPlans = visiblePlans;
+
   return (
     <div
       className="fixed inset-0 z-60 flex items-center justify-center bg-black/50"
@@ -196,16 +282,24 @@ export default function PricingModal({ isOpen, onClose, eventId, actionType = "p
         <div className="px-6 py-5 space-y-3">
           {pricingLoading && <p className="text-sm text-gray-600">Loading pricing plans...</p>}
 
-          {!pricingLoading && plans.length === 0 && (
+          {!pricingLoading && displayPlans.length === 0 && (
             <p className="text-sm text-gray-600">No active pricing plans found.</p>
           )}
 
-          {plans.map((plan, index) => {
+          {displayPlans.map((plan, index) => {
             const isSelected = selected === plan.id;
-            const isOptionLocked = lockToLowestPlan && String(plan.id) !== String(lowestPlanId);
+            const isOptionLocked =
+              (lockToLowestPlan && String(plan.id) !== String(lowestPlanId)) ||
+              (effectiveLockSelection &&
+                Boolean(effectiveForcedPlanId) &&
+                String(plan.id) !== String(effectiveForcedPlanId));
             return (
               <label
                 key={`${plan.id}-${plan.duration}-${index}`}
+                onClick={() => {
+                  if (isOptionLocked) return;
+                  setSelected(plan.id);
+                }}
                 className={`flex items-start gap-3 p-4 rounded-xl border-2 transition-all duration-150 ${
                   isSelected
                     ? "border-[#E97C35] bg-[#F8D6C0]"

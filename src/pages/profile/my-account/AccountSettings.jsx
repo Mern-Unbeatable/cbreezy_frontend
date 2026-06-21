@@ -264,6 +264,10 @@ export default function AccountSettings() {
     label: item.name,
   }));
 
+  const isGoogleAuth =
+    String(accountSettingsData?.authProvider || "").toUpperCase() === "GOOGLE" ||
+    Boolean(accountSettingsData?.isGoogleLogin);
+
   const handleSaveChanges = async () => {
     if (!fullName.trim() || !phone.trim() || !country || !location) {
       toast.error("Please fill in full name, phone, country and location");
@@ -344,7 +348,7 @@ export default function AccountSettings() {
   };
 
   return (
-    <div className="min-h-screen bg-[#fbfbfb] py-8 px-4">
+    <div className="bg-[#fbfbfb] py-8 px-4 pb-12">
       <div className="max-w-7xl mx-auto">
         <p className="text-sm text-[#3d3d3d] mb-6">
           Hello {userName ? <span className="font-semibold">{userName}</span> : null}{" "}
@@ -453,64 +457,66 @@ export default function AccountSettings() {
             </div>
           </SectionCard>
 
-          <SectionCard title="Change Password">
-            <div className="flex flex-col gap-4">
-              <InputField
-                label="Current Password"
-                type={showCurrent ? "text" : "password"}
-                placeholder=""
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                rightIcon={
-                  showCurrent ? (
-                    <EyeOff size={16} onClick={() => setShowCurrent(false)} />
-                  ) : (
-                    <Eye size={16} onClick={() => setShowCurrent(true)} />
-                  )
-                }
-              />
+          {!isGoogleAuth && (
+            <SectionCard title="Change Password">
+              <div className="flex flex-col gap-4">
+                <InputField
+                  label="Current Password"
+                  type={showCurrent ? "text" : "password"}
+                  placeholder=""
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  rightIcon={
+                    showCurrent ? (
+                      <EyeOff size={16} onClick={() => setShowCurrent(false)} />
+                    ) : (
+                      <Eye size={16} onClick={() => setShowCurrent(true)} />
+                    )
+                  }
+                />
 
-              <InputField
-                label="New Password"
-                type={showNew ? "text" : "password"}
-                placeholder="8+ characters"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                rightIcon={
-                  showNew ? (
-                    <EyeOff size={16} onClick={() => setShowNew(false)} />
-                  ) : (
-                    <Eye size={16} onClick={() => setShowNew(true)} />
-                  )
-                }
-              />
+                <InputField
+                  label="New Password"
+                  type={showNew ? "text" : "password"}
+                  placeholder="8+ characters"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  rightIcon={
+                    showNew ? (
+                      <EyeOff size={16} onClick={() => setShowNew(false)} />
+                    ) : (
+                      <Eye size={16} onClick={() => setShowNew(true)} />
+                    )
+                  }
+                />
 
-              <InputField
-                label="Confirm Password"
-                type={showConfirm ? "text" : "password"}
-                placeholder=""
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                rightIcon={
-                  showConfirm ? (
-                    <EyeOff size={16} onClick={() => setShowConfirm(false)} />
-                  ) : (
-                    <Eye size={16} onClick={() => setShowConfirm(true)} />
-                  )
-                }
-              />
+                <InputField
+                  label="Confirm Password"
+                  type={showConfirm ? "text" : "password"}
+                  placeholder=""
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  rightIcon={
+                    showConfirm ? (
+                      <EyeOff size={16} onClick={() => setShowConfirm(false)} />
+                    ) : (
+                      <Eye size={16} onClick={() => setShowConfirm(true)} />
+                    )
+                  }
+                />
 
-              <div className="mt-2">
-                <button
-                  onClick={handleChangePassword}
-                  disabled={changingPassword}
-                  className="px-6 py-2.5 bg-[#d4824a] text-white text-xs font-bold tracking-widest uppercase rounded transition disabled:cursor-not-allowed disabled:opacity-70"
-                >
-                  {changingPassword ? "Changing..." : "Change Password"}
-                </button>
+                <div className="mt-2">
+                  <button
+                    onClick={handleChangePassword}
+                    disabled={changingPassword}
+                    className="px-6 py-2.5 bg-[#d4824a] text-white text-xs font-bold tracking-widest uppercase rounded transition disabled:cursor-not-allowed disabled:opacity-70"
+                  >
+                    {changingPassword ? "Changing..." : "Change Password"}
+                  </button>
+                </div>
               </div>
-            </div>
-          </SectionCard>
+            </SectionCard>
+          )}
         </div>
       </div>
     </div>

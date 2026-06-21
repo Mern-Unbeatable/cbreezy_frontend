@@ -21,8 +21,15 @@ const normalizeServiceStatus = (value) => {
   return raw.charAt(0).toUpperCase() + raw.slice(1);
 };
 
+const toImageArray = (value) => {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => (typeof item === "string" ? item : item?.url || item?.image || item?.src || ""))
+    .filter(Boolean);
+};
+
 const pickPrimaryImage = (item) => {
-  const direct = item?.image ?? item?.imageUrl ?? item?.thumbnail;
+  const direct = item?.mainImage ?? item?.image ?? item?.imageUrl ?? item?.thumbnail;
   if (typeof direct === "string" && direct.trim()) return direct;
 
   const gallery = [
@@ -38,22 +45,35 @@ const pickPrimaryImage = (item) => {
   return first?.url || first?.image || first?.src || "";
 };
 
-const normalizeServiceItem = (item) => ({
-  id: item?.id ?? item?._id,
-  title: item?.title ?? item?.serviceTitle ?? item?.name ?? "Untitled Service",
-  description: item?.description ?? item?.shortDescription ?? "",
-  price: item?.price ?? item?.startingPrice ?? "$0",
-  image: pickPrimaryImage(item),
-  categoryId: item?.categoryId ?? item?.category?._id ?? item?.category?.id,
-  subCategoryId: item?.subCategoryId ?? item?.subCategory?._id ?? item?.subCategory?.id,
-  countryId: item?.countryId,
-  regionId: item?.regionId,
-  contactEmail: item?.contactEmail ?? item?.email ?? "",
-  contactPhone: item?.contactPhone ?? item?.phone ?? "",
-  status: normalizeServiceStatus(item?.status ?? item?.serviceStatus ?? item?.listingStatus ?? item?.approvalStatus),
-  showRenew: Boolean(item?.showRenew ?? item?.isRenewable),
-  payments: Array.isArray(item?.payments) ? item.payments : [],
-});
+const normalizeServiceItem = (item) => {
+  const serviceImages = toImageArray(item?.serviceImages || item?.thumbnails || item?.images || []);
+  const galleryImages = toImageArray(item?.gallery || item?.galleryImages || []);
+  const image = pickPrimaryImage(item) || serviceImages[0] || "";
+
+  return {
+    id: item?.id ?? item?._id,
+    title: item?.title ?? item?.serviceTitle ?? item?.name ?? "Untitled Service",
+    description: item?.description ?? item?.shortDescription ?? "",
+    price: item?.price ?? item?.startingPrice ?? "$0",
+    image,
+    mainImage: item?.mainImage || image,
+    serviceImages: serviceImages.length > 0 ? serviceImages : image ? [image] : [],
+    galleryImages,
+    categoryId: item?.categoryId ?? item?.category?._id ?? item?.category?.id,
+    subCategoryId: item?.subCategoryId ?? item?.subCategory?._id ?? item?.subCategory?.id,
+    countryId: item?.countryId ?? item?.country?.id ?? item?.country?._id ?? "",
+    regionId: item?.regionId ?? item?.region?.id ?? item?.region?._id ?? "",
+    cityId: item?.cityId ?? item?.city?.id ?? item?.city?._id ?? "",
+    address: item?.address ?? "",
+    contactEmail: item?.contactEmail ?? item?.email ?? "",
+    contactPhone: item?.contactPhone ?? item?.phone ?? "",
+    facebookUrl: item?.facebookUrl ?? item?.facebook ?? "",
+    instagramUrl: item?.instagramUrl ?? item?.instagram ?? "",
+    status: normalizeServiceStatus(item?.status ?? item?.serviceStatus ?? item?.listingStatus ?? item?.approvalStatus),
+    showRenew: Boolean(item?.showRenew ?? item?.isRenewable),
+    payments: Array.isArray(item?.payments) ? item.payments : [],
+  };
+};
 
 const normalizeServices = (payload) => {
   const list = normalizeList(payload);
@@ -109,13 +129,6 @@ const toArrayOfStrings = (value) => {
     return value.map((item) => (typeof item === "string" ? item : item?.name || item?.title || "")).filter(Boolean);
   }
   return [];
-};
-
-const toImageArray = (value) => {
-  if (!Array.isArray(value)) return [];
-  return value
-    .map((item) => (typeof item === "string" ? item : item?.url || item?.image || item?.src || ""))
-    .filter(Boolean);
 };
 
 const normalizeServiceDetail = (payload) => {
@@ -221,12 +234,50 @@ export const updateMyServiceAPI = async (serviceId, payload) => {
     appendIfPresent(formData, "contactPhone", payload?.contactPhone);
     appendIfPresent(formData, "countryId", payload?.countryId);
     appendIfPresent(formData, "regionId", payload?.regionId);
+    appendIfPresent(formData, "cityId", payload?.cityId);
+    appendIfPresent(formData, "address", payload?.address);
     appendIfPresent(formData, "categoryId", payload?.categoryId);
+    appendIfPresent(formData, "subCategoryId", payload?.subCategoryId);
+    appendIfPresent(formData, "facebookUrl", payload?.facebookUrl);
+    appendIfPresent(formData, "instagramUrl", payload?.instagramUrl);
     appendIfPresent(formData, "status", payload?.status);
     appendIfPresent(formData, "mainImage", payload?.mainImage);
+
+    if (Array.isArray(payload?.removedServiceImages)) {
+      payload.removedServiceImages.forEach((url) => {
+        if (url) formData.append("removedServiceImages", url);
+      });
+    }
+
+    if (Array.isArray(payload?.removedGalleryImages)) {
+      payload.removedGalleryImages.forEach((url) => {
+        if (url) formData.append("removedGalleryImages", url);
+      });
+    }
+
+    if (Array.isArray(payload?.serviceImages)) {
+      payload.serviceImages.forEach((url) => {
+        if (url) formData.append("serviceImages", url);
+      });
+    }
   }
 
   const response = await apiClient.put(`/api/services/me/${serviceId}`, formData);
+  const source = extractPayload(response.data);
+
+  return {
+    item: normalizeServiceItem(source),
+    raw: response.data,
+  };
+};
+
+export const removeMyServiceImageAPI = async (serviceId, { imageUrl, imageType }) => {
+  const response = await apiClient.delete(`/api/services/me/${serviceId}/images`, {
+    data: {
+      imageUrl,
+      ...(imageType ? { imageType } : {}),
+    },
+  });
   const source = extractPayload(response.data);
 
   return {

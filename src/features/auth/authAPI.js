@@ -95,7 +95,8 @@ export const resetPasswordAPI = async (payload) => {
 
 export const fetchAccountSettingsAPI = async () => {
   const response = await apiClient.get(AUTH_ENDPOINTS.ACCOUNT_SETTINGS);
-  const raw = extractPayload(response.data);
+  const payload = extractPayload(response.data);
+  const raw = payload?.user || payload;
 
   return {
     fullName: raw?.fullName || raw?.name || "",
@@ -103,7 +104,10 @@ export const fetchAccountSettingsAPI = async () => {
     phoneNumber: raw?.phoneNumber || raw?.phone || "",
     countryId: raw?.countryId || raw?.country?.id || raw?.country?._id || "",
     regionId: raw?.regionId || raw?.region?.id || raw?.region?._id || "",
+    cityId: raw?.cityId || raw?.city?.id || raw?.city?._id || "",
     profileImage: raw?.profileImage || raw?.avatar || raw?.image || "",
+    authProvider: raw?.authProvider || "",
+    isGoogleLogin: Boolean(raw?.isGoogleLogin),
   };
 };
 

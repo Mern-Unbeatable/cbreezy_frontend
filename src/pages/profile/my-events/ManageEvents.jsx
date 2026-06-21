@@ -15,6 +15,7 @@ import Pagination from "../../../components/Pagination";
 import {
   deleteMyEvent,
   fetchMyEvents,
+  fetchMyEventForEdit,
   fetchEventPricingPlansEligibility,
   purchaseEvent,
   selectMyEvents,
@@ -45,7 +46,7 @@ function StatusBadge({ status }) {
   );
 }
 
-function EventCard({ event, onEdit, onDelete, onRenew, onPay }) {
+function EventCard({ event, onEdit, onDelete, onRenew, onPay, editLoading = false }) {
   const [isActivating, setIsActivating] = useState(false);
   const isUnpaid =
     !Array.isArray(event?.payments) ||
@@ -135,7 +136,8 @@ function EventCard({ event, onEdit, onDelete, onRenew, onPay }) {
               <button
                 type="button"
                 onClick={() => onEdit(event.id)}
-                className="flex flex-1 items-center justify-center gap-1 sm:gap-1.5 rounded-md border border-[#004C48] bg-[#E6EDED] py-1.5 sm:py-2 text-xs sm:text-sm md:text-base font-semibold text-[#0f6e6a] hover:bg-[#dce4e4] transition-colors"
+                disabled={editLoading}
+                className="flex flex-1 items-center justify-center gap-1 sm:gap-1.5 rounded-md border border-[#004C48] bg-[#E6EDED] py-1.5 sm:py-2 text-xs sm:text-sm md:text-base font-semibold text-[#0f6e6a] hover:bg-[#dce4e4] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <Edit2 size={11} className="sm:w-3.5 sm:h-3.5" />
                 <span className="hidden sm:inline">Edit</span>
@@ -170,6 +172,7 @@ export default function ManageEvents() {
   const [pricingEventId, setPricingEventId] = useState("");
   const [pricingActionType, setPricingActionType] = useState("purchase");
   const [editingEvent, setEditingEvent] = useState(null);
+  const [editEventLoading, setEditEventLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
@@ -215,12 +218,27 @@ export default function ManageEvents() {
     setCurrentPage(1);
   };
 
-  const handleEditEvent = (eventId) => {
+  const handleEditEvent = async (eventId) => {
     const targetEvent = filtered.find((item) => item.id === eventId);
     if (!targetEvent) return;
 
-    setEditingEvent(targetEvent);
-    setIsEditModalOpen(true);
+    if (!targetEvent.categoryId) {
+      toast.error("Category not found for this event");
+      return;
+    }
+
+    setEditEventLoading(true);
+    try {
+      const fullEvent = await dispatch(
+        fetchMyEventForEdit({ categoryId: targetEvent.categoryId, eventId })
+      ).unwrap();
+      setEditingEvent(fullEvent);
+      setIsEditModalOpen(true);
+    } catch (error) {
+      toast.error(error || "Failed to load event details for edit");
+    } finally {
+      setEditEventLoading(false);
+    }
   };
 
   const handleCloseEditModal = () => {
@@ -389,6 +407,7 @@ export default function ManageEvents() {
                   onDelete={handleDeleteEvent}
                   onRenew={handleOpenPricingModal}
                   onPay={handlePayActivate}
+                  editLoading={editEventLoading}
                 />
               ))}
             </div>

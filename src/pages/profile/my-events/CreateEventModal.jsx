@@ -6,6 +6,7 @@ import PricingModal from "./PricingModal";
 import {
   createEvent,
   updateMyEvent,
+  removeMyEventImage,
   fetchEventCategories,
   fetchEventPricingPlansEligibility,
   purchaseEvent,
@@ -64,8 +65,42 @@ export default function CreateEventModal({ isOpen, onClose, editEvent = null, on
 
   const [eventImageFiles, setEventImageFiles] = useState([]);
   const [eventImagePreviews, setEventImagePreviews] = useState([]);
+  const [existingEventImages, setExistingEventImages] = useState([]);
   const [galleryImageFiles, setGalleryImageFiles] = useState([]);
   const [galleryImagePreviews, setGalleryImagePreviews] = useState([]);
+  const [existingGalleryImages, setExistingGalleryImages] = useState([]);
+  const [removingImageUrl, setRemovingImageUrl] = useState("");
+
+  const syncImagesFromEvent = (event) => {
+    setExistingEventImages(resolveEditEventImages(event));
+    setExistingGalleryImages(resolveEditGalleryImages(event));
+  };
+
+  const resolveEditEventImages = (event) => {
+    if (Array.isArray(event?.eventImages) && event.eventImages.length > 0) {
+      return event.eventImages;
+    }
+    if (Array.isArray(event?.serviceImages) && event.serviceImages.length > 0) {
+      return event.serviceImages;
+    }
+    if (event?.mainImage) return [event.mainImage];
+    if (event?.eventImage) return [event.eventImage];
+    if (event?.image) return [event.image];
+    return [];
+  };
+
+  const resolveEditGalleryImages = (event) => {
+    if (Array.isArray(event?.galleryImages) && event.galleryImages.length > 0) {
+      return event.galleryImages;
+    }
+    if (Array.isArray(event?.eventGallery) && event.eventGallery.length > 0) {
+      return event.eventGallery;
+    }
+    if (Array.isArray(event?.gallery) && event.gallery.length > 0) {
+      return event.gallery;
+    }
+    return [];
+  };
 
   useEffect(() => {
     if (!isOpen) return;
@@ -85,14 +120,15 @@ export default function CreateEventModal({ isOpen, onClose, editEvent = null, on
       countryId: editEvent.countryId || "",
       regionId: editEvent.regionId || "",
       cityId: editEvent.cityId || "",
-      location: editEvent.location || "",
-      eventStart: editEvent.eventStart || "",
-      eventEnd: editEvent.eventEnd || "",
+      location: editEvent.location || editEvent.address || "",
+      eventStart: editEvent.eventStart || editEvent.startDate || "",
+      eventEnd: editEvent.eventEnd || editEvent.endDate || "",
       email: editEvent.contactEmail || editEvent.email || "",
       phone: editEvent.contactPhone || editEvent.phone || "",
       facebook: editEvent.facebookUrl || editEvent.facebook || "",
       instagram: editEvent.instagramUrl || editEvent.instagram || "",
     });
+    syncImagesFromEvent(editEvent);
     setEventImageFiles([]);
     setEventImagePreviews([]);
     setGalleryImageFiles([]);
@@ -114,6 +150,17 @@ export default function CreateEventModal({ isOpen, onClose, editEvent = null, on
     dispatch(fetchCitiesByRegion(form.regionId));
   }, [dispatch, form.regionId]);
 
+  useEffect(() => {
+    if (!isEditMode || !editEvent?.cityId || cities.length === 0) return;
+
+    const matchedCity = cities.some((item) => String(item.id) === String(editEvent.cityId));
+    if (matchedCity) {
+      setForm((prev) =>
+        prev.cityId === String(editEvent.cityId) ? prev : { ...prev, cityId: String(editEvent.cityId) }
+      );
+    }
+  }, [isEditMode, editEvent?.cityId, cities]);
+
   const resetModalState = () => {
     setForm({
       title: "",
@@ -133,8 +180,11 @@ export default function CreateEventModal({ isOpen, onClose, editEvent = null, on
     });
     setEventImageFiles([]);
     setEventImagePreviews([]);
+    setExistingEventImages([]);
     setGalleryImageFiles([]);
     setGalleryImagePreviews([]);
+    setExistingGalleryImages([]);
+    setRemovingImageUrl("");
   };
 
   const handleInputChange = (field, value) => {
@@ -162,7 +212,14 @@ export default function CreateEventModal({ isOpen, onClose, editEvent = null, on
 
   const handleEventImageUpload = (e) => {
     const files = Array.from(e.target.files || []);
-    const remainingSlots = 4 - eventImageFiles.length;
+    const remainingSlots = 4 - existingEventImages.length - eventImageFiles.length;
+
+    if (remainingSlots <= 0) {
+      toast.error("Remove an existing event image first to upload a new one");
+      e.target.value = "";
+      return;
+    }
+
     const filesToAdd = files.slice(0, remainingSlots);
 
     setEventImageFiles((prev) => [...prev, ...filesToAdd]);
@@ -180,7 +237,14 @@ export default function CreateEventModal({ isOpen, onClose, editEvent = null, on
 
   const handleGalleryImageUpload = (e) => {
     const files = Array.from(e.target.files || []);
-    const remainingSlots = 8 - galleryImageFiles.length;
+    const remainingSlots = 8 - existingGalleryImages.length - galleryImageFiles.length;
+
+    if (remainingSlots <= 0) {
+      toast.error("Remove an existing gallery image first to upload a new one");
+      e.target.value = "";
+      return;
+    }
+
     const filesToAdd = files.slice(0, remainingSlots);
 
     setGalleryImageFiles((prev) => [...prev, ...filesToAdd]);
@@ -206,16 +270,73 @@ export default function CreateEventModal({ isOpen, onClose, editEvent = null, on
     setGalleryImagePreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const removeExistingEventImage = async (index) => {
+    const imageUrl = existingEventImages[index];
+    if (!imageUrl || !editEvent?.id) return;
+
+    setRemovingImageUrl(imageUrl);
+    try {
+      const result = await dispatch(
+        removeMyEventImage({
+          eventId: editEvent.id,
+          imageUrl,
+          imageType: "eventImages",
+        })
+      ).unwrap();
+
+      syncImagesFromEvent(result?.item || {});
+      toast.success("Event image removed");
+    } catch (error) {
+      toast.error(error || "Failed to remove event image");
+    } finally {
+      setRemovingImageUrl("");
+    }
+  };
+
+  const removeExistingGalleryImage = async (index) => {
+    const imageUrl = existingGalleryImages[index];
+    if (!imageUrl || !editEvent?.id) return;
+
+    setRemovingImageUrl(imageUrl);
+    try {
+      const result = await dispatch(
+        removeMyEventImage({
+          eventId: editEvent.id,
+          imageUrl,
+          imageType: "gallery",
+        })
+      ).unwrap();
+
+      syncImagesFromEvent(result?.item || {});
+      toast.success("Gallery image removed");
+    } catch (error) {
+      toast.error(error || "Failed to remove gallery image");
+    } finally {
+      setRemovingImageUrl("");
+    }
+  };
+
   const handleCloseCreateModal = () => {
     setIsPricingOpen(false);
     setCreatedEventId("");
+    setPricingForcePlanId("");
+    setPricingLockSelection(false);
+    setPricingHideFree(false);
     resetModalState();
     onClose();
+  };
+
+  const handleOpenPricingModal = (eventId) => {
+    setCreatedEventId(String(eventId || ""));
+    setIsPricingOpen(true);
   };
 
   const handleClosePricingModal = () => {
     setIsPricingOpen(false);
     setCreatedEventId("");
+    setPricingForcePlanId("");
+    setPricingLockSelection(false);
+    setPricingHideFree(false);
     resetModalState();
     onClose();
   };
@@ -248,7 +369,10 @@ export default function CreateEventModal({ isOpen, onClose, editEvent = null, on
 
       setUpdateLoading(true);
       try {
-        await dispatch(updateMyEvent({ eventId: editEvent.id, payload })).unwrap();
+        const result = await dispatch(updateMyEvent({ eventId: editEvent.id, payload })).unwrap();
+        if (result?.item) {
+          syncImagesFromEvent(result.item);
+        }
         toast.success("Event updated successfully");
         if (onSaved) onSaved();
         onClose();
@@ -364,31 +488,29 @@ export default function CreateEventModal({ isOpen, onClose, editEvent = null, on
         // If discount eligibility -> show modal with Intro selected and locked, hide free
         if (!isEligibleForFree && isEligibleForDiscount) {
           const introId = String(eligibility?.introductoryPlanId || "") || String((plans.find((p) => p.isIntroductory) || {}).id || "");
-          setCreatedEventId(eventId);
+          handleOpenPricingModal(eventId);
           setPricingForcePlanId(introId || "");
           setPricingLockSelection(true);
           setPricingHideFree(true);
-          setIsPricingOpen(true);
           return;
         }
 
-        // Neither free nor discount -> select Standard and proceed to pricing modal (locked)
         const standardPlan = plans.find((p) => String(p?.title || "").toLowerCase().includes("standard")) || plans.find((p) => Number(p.price || 0) > 0) || plans[0];
         const standardId = String(standardPlan?.id || "");
-        setCreatedEventId(eventId);
+        handleOpenPricingModal(eventId);
         setPricingForcePlanId(standardId);
         setPricingLockSelection(true);
         setPricingHideFree(true);
-        setIsPricingOpen(true);
       } catch (err) {
-        // fallback to opening pricing modal if eligibility check fails
-        setCreatedEventId(String(result.eventId));
-        setIsPricingOpen(true);
+        handleOpenPricingModal(result.eventId);
       }
     } catch (error) {
       toast.error(error || "Failed to create event");
     }
   };
+
+  const totalEventImages = existingEventImages.length + eventImageFiles.length;
+  const totalGalleryImages = existingGalleryImages.length + galleryImageFiles.length;
 
   if (!isOpen && !isPricingOpen && !isEditMode) return null;
   if (!isOpen && !isPricingOpen) return null;
@@ -557,16 +679,32 @@ export default function CreateEventModal({ isOpen, onClose, editEvent = null, on
               </div>
 
               <div>
-                <h3 className="text-base text-[#0C0C0C] font-semibold mb-3">
-                  Event Image ({eventImageFiles.length}/4){isEditMode && " — upload new to replace"}
+                <h3 className="text-base text-[#0C0C0C] font-semibold mb-1">
+                  Event Image ({totalEventImages}/4)
                 </h3>
-                {isEditMode && editEvent?.image && eventImageFiles.length === 0 && (
-                  <div className="mb-2 flex items-center gap-3">
-                    <img src={editEvent.image} alt="current" className="h-16 w-16 rounded object-cover border border-gray-200" />
-                    <span className="text-xs text-gray-500">Current image</span>
-                  </div>
+                {isEditMode && (
+                  <p className="text-xs text-gray-500 mb-3">
+                    Tap the X on an image to remove it, then use Upload to add a replacement.
+                  </p>
                 )}
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-3">
+                  {existingEventImages.map((src, i) => (
+                    <div key={`existing-event-${src}`} className="relative aspect-square rounded overflow-hidden bg-gray-100">
+                      <img src={src} alt={`event-existing-${i}`} className="w-full h-full object-cover" />
+                      {isEditMode && (
+                        <button
+                          type="button"
+                          onClick={() => removeExistingEventImage(i)}
+                          disabled={Boolean(removingImageUrl)}
+                          className="absolute top-1.5 right-1.5 rounded-full bg-black/70 p-1 text-white hover:bg-black transition disabled:opacity-50 disabled:cursor-not-allowed"
+                          aria-label="Remove event image"
+                        >
+                          <X size={14} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+
                   {eventImagePreviews.map((src, i) => (
                     <div key={i} className="relative aspect-square rounded overflow-hidden bg-gray-100">
                       <img src={src} alt={`event-${i}`} className="w-full h-full object-cover" />
@@ -579,7 +717,7 @@ export default function CreateEventModal({ isOpen, onClose, editEvent = null, on
                     </div>
                   ))}
 
-                  {eventImageFiles.length < 4 && (
+                  {totalEventImages < 4 && (
                     <label className="aspect-square rounded border-2 border-dashed border-orange-300 flex items-center justify-center cursor-pointer hover:border-orange-500 hover:bg-orange-50 transition">
                       <div className="text-center">
                         <Upload size={20} className="text-orange-400 mx-auto mb-1" />
@@ -648,8 +786,32 @@ export default function CreateEventModal({ isOpen, onClose, editEvent = null, on
               </div>
 
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 mb-3">Event Gallery ({galleryImageFiles.length}/8)</h3>
+                <h3 className="text-sm font-semibold text-gray-700 mb-1">
+                  Event Gallery ({totalGalleryImages}/8)
+                </h3>
+                {isEditMode && (
+                  <p className="text-xs text-gray-500 mb-3">
+                    Tap the X on an image to remove it, then use Upload to add a replacement.
+                  </p>
+                )}
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-3">
+                  {existingGalleryImages.map((src, i) => (
+                    <div key={`existing-gallery-${src}`} className="relative aspect-square rounded overflow-hidden bg-gray-100">
+                      <img src={src} alt={`gallery-existing-${i}`} className="w-full h-full object-cover" />
+                      {isEditMode && (
+                        <button
+                          type="button"
+                          onClick={() => removeExistingGalleryImage(i)}
+                          disabled={Boolean(removingImageUrl)}
+                          className="absolute top-1.5 right-1.5 rounded-full bg-black/70 p-1 text-white hover:bg-black transition disabled:opacity-50 disabled:cursor-not-allowed"
+                          aria-label="Remove gallery image"
+                        >
+                          <X size={14} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+
                   {galleryImagePreviews.map((src, i) => (
                     <div key={i} className="relative aspect-square rounded overflow-hidden bg-gray-100">
                       <img src={src} alt={`gallery-${i}`} className="w-full h-full object-cover" />
@@ -662,7 +824,7 @@ export default function CreateEventModal({ isOpen, onClose, editEvent = null, on
                     </div>
                   ))}
 
-                  {galleryImageFiles.length < 8 && (
+                  {totalGalleryImages < 8 && (
                     <label className="aspect-square rounded border-2 border-dashed border-orange-300 flex items-center justify-center cursor-pointer hover:border-orange-500 hover:bg-orange-50 transition">
                       <div className="text-center">
                         <Upload size={20} className="text-orange-400 mx-auto mb-1" />

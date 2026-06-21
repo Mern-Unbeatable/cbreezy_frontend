@@ -21,14 +21,24 @@ const normalizeEventStatus = (value) => {
   return raw.charAt(0).toUpperCase() + raw.slice(1);
 };
 
+const toImageArray = (value) => {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => (typeof item === "string" ? item : item?.url || item?.image || item?.src || ""))
+    .filter(Boolean);
+};
+
 const pickPrimaryImage = (item) => {
-  const direct = item?.image ?? item?.imageUrl ?? item?.thumbnail;
+  const direct =
+    item?.mainImage ?? item?.eventImage ?? item?.image ?? item?.imageUrl ?? item?.thumbnail;
   if (typeof direct === "string" && direct.trim()) return direct;
 
   const gallery = [
     ...(Array.isArray(item?.eventImages) ? item.eventImages : []),
+    ...(Array.isArray(item?.serviceImages) ? item.serviceImages : []),
     ...(Array.isArray(item?.images) ? item.images : []),
     ...(Array.isArray(item?.gallery) ? item.gallery : []),
+    ...(Array.isArray(item?.eventGallery) ? item.eventGallery : []),
   ];
 
   const first = gallery.find(Boolean);
@@ -61,20 +71,42 @@ const normalizePagination = (payload, fallbackPage = 1, fallbackLimit = 12) => {
   };
 };
 
-const normalizeEventItem = (item) => ({
-  id: item?.id ?? item?._id,
-  title: item?.title ?? item?.eventTitle ?? item?.name ?? "Untitled Event",
-  description: item?.description ?? item?.shortDescription ?? "",
-  price: item?.price ?? item?.startingPrice ?? "$0",
-  image: pickPrimaryImage(item),
-  categoryId: item?.categoryId ?? item?.category?._id ?? item?.category?.id,
-  category: item?.category?.name ?? item?.categoryName ?? item?.category ?? "",
-  countryId: item?.countryId ?? item?.country?._id ?? item?.country?.id,
-  regionId: item?.regionId ?? item?.region?._id ?? item?.region?.id,
-  status: normalizeEventStatus(item?.status ?? item?.eventStatus ?? item?.listingStatus ?? item?.approvalStatus),
-  showRenew: Boolean(item?.showRenew ?? item?.isRenewable),
-  payments: Array.isArray(item?.payments) ? item.payments : [],
-});
+const normalizeEventItem = (item) => {
+  const eventImages = toImageArray(
+    item?.eventImages || item?.serviceImages || item?.thumbnails || item?.images || []
+  );
+  const galleryImages = toImageArray(item?.eventGallery || item?.gallery || item?.galleryImages || []);
+  const image = pickPrimaryImage(item) || eventImages[0] || "";
+
+  return {
+    id: item?.id ?? item?._id,
+    title: item?.title ?? item?.eventTitle ?? item?.name ?? "Untitled Event",
+    description: item?.description ?? item?.shortDescription ?? "",
+    price: item?.price ?? item?.startingPrice ?? "$0",
+    image,
+    mainImage: item?.mainImage || item?.eventImage || image,
+    eventImages: eventImages.length > 0 ? eventImages : image ? [image] : [],
+    galleryImages,
+    categoryId: item?.categoryId ?? item?.category?._id ?? item?.category?.id,
+    category: item?.category?.name ?? item?.categoryName ?? item?.category ?? "",
+    countryId: item?.countryId ?? item?.country?.id ?? item?.country?._id ?? "",
+    regionId: item?.regionId ?? item?.region?.id ?? item?.region?._id ?? "",
+    cityId: item?.cityId ?? item?.city?.id ?? item?.city?._id ?? "",
+    address: item?.address ?? "",
+    location: item?.location || item?.address || "",
+    contactEmail: item?.contactEmail ?? item?.email ?? "",
+    contactPhone: item?.contactPhone ?? item?.phone ?? "",
+    facebookUrl: item?.facebookUrl ?? item?.facebook ?? "",
+    instagramUrl: item?.instagramUrl ?? item?.instagram ?? "",
+    startDate: item?.startDate ?? item?.eventStart ?? null,
+    endDate: item?.endDate ?? item?.eventEnd ?? null,
+    eventStart: item?.eventStart ?? item?.startDate ?? null,
+    eventEnd: item?.eventEnd ?? item?.endDate ?? null,
+    status: normalizeEventStatus(item?.status ?? item?.eventStatus ?? item?.listingStatus ?? item?.approvalStatus),
+    showRenew: Boolean(item?.showRenew ?? item?.isRenewable),
+    payments: Array.isArray(item?.payments) ? item.payments : [],
+  };
+};
 
 const normalizeEvents = (payload) => {
   const list = normalizeList(payload);
@@ -102,13 +134,6 @@ const toArrayOfStrings = (value) => {
   if (!value) return [];
   if (!Array.isArray(value)) return [];
   return value.map((item) => (typeof item === "string" ? item : item?.name || item?.title || "")).filter(Boolean);
-};
-
-const toImageArray = (value) => {
-  if (!Array.isArray(value)) return [];
-  return value
-    .map((item) => (typeof item === "string" ? item : item?.url || item?.image || item?.src || ""))
-    .filter(Boolean);
 };
 
 const normalizeEventDetail = (payload) => {
@@ -197,8 +222,85 @@ export const fetchMyEventsAPI = async (params = {}) => {
   };
 };
 
+const appendIfPresent = (formData, key, value) => {
+  if (value === undefined || value === null) return;
+  if (typeof value === "string" && !value.trim()) return;
+  formData.append(key, value);
+};
+
+export const fetchMyEventForEditAPI = async ({ categoryId, eventId }) => {
+  const response = await apiClient.get(`/api/categories/event/${categoryId}`);
+  const payload = extractPayload(response.data);
+  const events = Array.isArray(payload?.events) ? payload.events : [];
+  const rawEvent = events.find((item) => String(item?.id) === String(eventId));
+
+  if (!rawEvent) {
+    throw new Error("Event not found for edit");
+  }
+
+  return normalizeEventItem(rawEvent);
+};
+
 export const updateMyEventAPI = async (eventId, payload) => {
-  const response = await apiClient.put(`/api/events/me/${eventId}`, payload);
+  const formData = payload instanceof FormData ? payload : new FormData();
+
+  if (!(payload instanceof FormData)) {
+    appendIfPresent(formData, "title", payload?.title);
+    appendIfPresent(formData, "description", payload?.description);
+    appendIfPresent(formData, "price", payload?.price);
+    appendIfPresent(formData, "categoryId", payload?.categoryId);
+    appendIfPresent(formData, "countryId", payload?.countryId);
+    appendIfPresent(formData, "regionId", payload?.regionId);
+    appendIfPresent(formData, "cityId", payload?.cityId);
+    appendIfPresent(formData, "location", payload?.location);
+    appendIfPresent(formData, "address", payload?.address);
+    appendIfPresent(formData, "eventStart", payload?.eventStart);
+    appendIfPresent(formData, "eventEnd", payload?.eventEnd);
+    appendIfPresent(formData, "email", payload?.email);
+    appendIfPresent(formData, "contactEmail", payload?.contactEmail);
+    appendIfPresent(formData, "phone", payload?.phone);
+    appendIfPresent(formData, "contactPhone", payload?.contactPhone);
+    appendIfPresent(formData, "facebook", payload?.facebook);
+    appendIfPresent(formData, "facebookUrl", payload?.facebookUrl);
+    appendIfPresent(formData, "instagram", payload?.instagram);
+    appendIfPresent(formData, "instagramUrl", payload?.instagramUrl);
+    appendIfPresent(formData, "mainImage", payload?.mainImage);
+
+    if (Array.isArray(payload?.removedEventImages)) {
+      payload.removedEventImages.forEach((url) => {
+        if (url) formData.append("removedEventImages", url);
+      });
+    }
+
+    if (Array.isArray(payload?.removedGalleryImages)) {
+      payload.removedGalleryImages.forEach((url) => {
+        if (url) formData.append("removedGalleryImages", url);
+      });
+    }
+
+    if (Array.isArray(payload?.eventImages)) {
+      payload.eventImages.forEach((url) => {
+        if (url) formData.append("eventImages", url);
+      });
+    }
+  }
+
+  const response = await apiClient.put(`/api/events/me/${eventId}`, formData);
+  const source = extractPayload(response.data);
+
+  return {
+    item: normalizeEventItem(source),
+    raw: response.data,
+  };
+};
+
+export const removeMyEventImageAPI = async (eventId, { imageUrl, imageType }) => {
+  const response = await apiClient.delete(`/api/events/me/${eventId}/images`, {
+    data: {
+      imageUrl,
+      ...(imageType ? { imageType } : {}),
+    },
+  });
   const source = extractPayload(response.data);
 
   return {

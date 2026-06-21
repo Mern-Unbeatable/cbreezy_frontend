@@ -9,7 +9,9 @@ import {
   fetchEventPricingPlansEligibilityAPI,
   fetchEventsAPI,
   fetchMyEventsAPI,
+  fetchMyEventForEditAPI,
   purchaseEventAPI,
+  removeMyEventImageAPI,
   reportEventSpamAPI,
   renewEventAPI,
   updateMyEventAPI,
@@ -59,6 +61,28 @@ export const deleteMyEvent = createAsyncThunk(
   async (eventId, { rejectWithValue }) => {
     try {
       return await deleteMyEventAPI(eventId);
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error));
+    }
+  }
+);
+
+export const fetchMyEventForEdit = createAsyncThunk(
+  "events/fetchMyEventForEdit",
+  async ({ categoryId, eventId }, { rejectWithValue }) => {
+    try {
+      return await fetchMyEventForEditAPI({ categoryId, eventId });
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error));
+    }
+  }
+);
+
+export const removeMyEventImage = createAsyncThunk(
+  "events/removeMyEventImage",
+  async ({ eventId, imageUrl, imageType }, { rejectWithValue }) => {
+    try {
+      return await removeMyEventImageAPI(eventId, { imageUrl, imageType });
     } catch (error) {
       return rejectWithValue(getErrorMessage(error));
     }
@@ -333,6 +357,14 @@ const eventsSlice = createSlice({
       .addCase(deleteMyEvent.rejected, (state, action) => {
         state.myItemsLoading = false;
         state.myItemsError = action.payload || "Failed to delete your event";
+      })
+      .addCase(removeMyEventImage.fulfilled, (state, action) => {
+        const updatedItem = action.payload.item;
+        if (!updatedItem?.id) return;
+
+        state.myItems = state.myItems.map((item) =>
+          String(item.id) === String(updatedItem.id) ? updatedItem : item
+        );
       })
       .addCase(fetchEventCategories.pending, (state) => {
         state.categoriesLoading = true;
