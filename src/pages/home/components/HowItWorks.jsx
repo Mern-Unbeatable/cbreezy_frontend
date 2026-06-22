@@ -14,7 +14,7 @@ export default function HowItWorks() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-10 md:gap-12 items-center mb-16 sm:mb-20 md:mb-24">
           <div className="flex justify-center md:justify-between items-center">
-            <img src="/Categories/card.png" alt="Create Account" className="w-full max-w-xs sm:max-w-sm md:max-w-lg h-auto" />
+            <img src="/Categories/card.png" alt="Create Account" className="w-full max-w-xs sm:max-w-sm md:max-w-lg h-auto" loading="lazy" decoding="async" />
           </div>
           <div className="md:text-center">
             <h3 className="text-2xl sm:text-3xl font-extrabold text-black mb-3 sm:mb-4 md:mb-6">
@@ -37,13 +37,13 @@ export default function HowItWorks() {
             </p>
           </div>
           <div className="flex justify-center md:justify-end order-1 md:order-2">
-            <img src="/Categories/card_md.png" alt="Search" className="w-full max-w-xs sm:max-w-sm md:max-w-lg h-auto" />
+            <img src="/Categories/card_md.png" alt="Search" className="w-full max-w-xs sm:max-w-sm md:max-w-lg h-auto" loading="lazy" decoding="async" />
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-10 md:gap-12 items-center">
           <div className="flex justify-center md:justify-start">
-            <img src="/Categories/card3_md.png" alt="Get Offers" className="w-full max-w-xs sm:max-w-sm md:max-w-lg h-auto" />
+            <img src="/Categories/card3_md.png" alt="Get Offers" className="w-full max-w-xs sm:max-w-sm md:max-w-lg h-auto" loading="lazy" decoding="async" />
           </div>
           <div className="text-left md:text-center">
             <h3 className="text-3xl md:text-4xl font-bold text-black mb-3 sm:mb-4 md:mb-6">

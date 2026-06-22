@@ -44,6 +44,8 @@ const ReachMoreCustomers = () => {
         src="/Categories/Event-hall.jpg"
         alt="Event hall"
         className="w-full h-full object-cover"
+        loading="lazy"
+        decoding="async"
       />
     </div>
 
@@ -53,6 +55,8 @@ const ReachMoreCustomers = () => {
         src="/Categories/Craftsman.png"
         alt="Craftsman"
         className="w-full h-full object-cover"
+        loading="lazy"
+        decoding="async"
       />
     </div>
 
@@ -62,6 +66,8 @@ const ReachMoreCustomers = () => {
         src="/Categories/Tech-workspace.png"
         alt="Tech workspace with wires"
         className="w-full h-full object-cover"
+        loading="lazy"
+        decoding="async"
       />
     </div>
   </div>

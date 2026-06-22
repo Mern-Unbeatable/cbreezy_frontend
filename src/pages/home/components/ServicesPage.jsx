@@ -402,6 +402,8 @@ export default function ServicesPage() {
                     src={cat.image || "https://placehold.co/400x300/f0f0f0/999?text=Category"}
                     alt={cat.name}
                     className="w-full h-full object-cover "
+                    loading="lazy"
+                    decoding="async"
                     onError={(e) => {
                       e.target.src = `https://placehold.co/400x300/f0f0f0/999?text=Image`;
                     }}
@@ -442,6 +444,8 @@ export default function ServicesPage() {
                     src={cat.image || "https://placehold.co/400x300/f0f0f0/999?text=Category"}
                     alt={cat.name}
                     className="w-full h-full object-cover "
+                    loading="lazy"
+                    decoding="async"
                     onError={(e) => {
                       e.target.src = `https://placehold.co/400x300/f0f0f0/999?text=Image`;
                     }}
