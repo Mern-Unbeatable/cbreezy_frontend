@@ -36,6 +36,8 @@ export default function Banner() {
             src={img.url}
             alt={`Slide ${i + 1}`}
             className="w-full h-full object-cover"
+            loading={i === 0 ? "eager" : "lazy"}
+            fetchpriority={i === 0 ? "high" : "auto"}
           />
           <div className="absolute inset-0 bg-black/30 z-20" />
         </div>

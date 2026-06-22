@@ -1,45 +1,49 @@
 
+import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { AdminRoute, UserRoute } from "../context/ProtectedRoutes";
-import Login from "../pages/login/Login";
-import Signup from "../pages/login/Signup";
-import ForgotPassword from "../pages/login/ForgotPassword";
-import OTPVerification from "../pages/login/OTPVerification";
-import VerifyRegistrationOTP from "../pages/login/VerifyRegistrationOTP";
-import ResetPassword from "../pages/login/ResetPassword";
-import Profile from "../pages/profile/Profile";
-import ManageEvents from "../pages/profile/my-events/ManageEvents";
-import EventPurchaseSuccess from "../pages/profile/my-events/EventPurchaseSuccess";
-import ManageServices from "../pages/profile/my-services/ManageServices";
-import ServicePurchaseSuccess from "../pages/profile/my-services/ServicePurchaseSuccess";
-import AccountSettings from "../pages/profile/my-account/AccountSettings";
-import AdminLayout from "../layout/adminLayout/AdminLayout";
+
 import PublicLayout from "../layout/publicLayout/PublicLayout";
-import Dashboard from "../pages/admin/dashboard/Dashboard";
-import AdminCategories from "../pages/admin/categories/AdminCategories";
-import AdminUser from "../pages/admin/user/AdminUser";
-import AdminListings from "../pages/admin/listings/AdminListings";
-import AdminListingDetail from "../pages/admin/listings/AdminListingDetail";
-import AdminRevenue from "../pages/admin/revenue/AdminRevenue";
-import AdminPricing from "../pages/admin/pricing/AdminPricing";
-import SupportTicketsPage from "../pages/SupportTicketsPage";
-import ComingSoon from "../pages/ComingSoon";
-import NotFound from "../pages/NotFound";
-import Home from "../pages/home/Home";
-import Categories from "../pages/categories/Categories";
-import Services from "../pages/services/Services";
-import ServiceDetail from "../pages/services/ServiceDetail";
-import Events from "../pages/events/Events";
-import EventDetail from "../pages/events/EventDetail";
-import About from "../pages/about/About";
-import ContactUs from "../pages/contact/ContactUs";
-import Privacy from "../pages/privacy/Privacy";
-import SafetyGuide from "../pages/safety/SafetyGuide";
-import SideGuruSuggestions from "../pages/sideguru-suggestions/SideGuruSuggestions";
+
+const Login = lazy(() => import("../pages/login/Login"));
+const Signup = lazy(() => import("../pages/login/Signup"));
+const ForgotPassword = lazy(() => import("../pages/login/ForgotPassword"));
+const OTPVerification = lazy(() => import("../pages/login/OTPVerification"));
+const VerifyRegistrationOTP = lazy(() => import("../pages/login/VerifyRegistrationOTP"));
+const ResetPassword = lazy(() => import("../pages/login/ResetPassword"));
+const Profile = lazy(() => import("../pages/profile/Profile"));
+const ManageEvents = lazy(() => import("../pages/profile/my-events/ManageEvents"));
+const EventPurchaseSuccess = lazy(() => import("../pages/profile/my-events/EventPurchaseSuccess"));
+const ManageServices = lazy(() => import("../pages/profile/my-services/ManageServices"));
+const ServicePurchaseSuccess = lazy(() => import("../pages/profile/my-services/ServicePurchaseSuccess"));
+const AccountSettings = lazy(() => import("../pages/profile/my-account/AccountSettings"));
+const AdminLayout = lazy(() => import("../layout/adminLayout/AdminLayout"));
+const Dashboard = lazy(() => import("../pages/admin/dashboard/Dashboard"));
+const AdminCategories = lazy(() => import("../pages/admin/categories/AdminCategories"));
+const AdminUser = lazy(() => import("../pages/admin/user/AdminUser"));
+const AdminListings = lazy(() => import("../pages/admin/listings/AdminListings"));
+const AdminListingDetail = lazy(() => import("../pages/admin/listings/AdminListingDetail"));
+const AdminRevenue = lazy(() => import("../pages/admin/revenue/AdminRevenue"));
+const AdminPricing = lazy(() => import("../pages/admin/pricing/AdminPricing"));
+const SupportTicketsPage = lazy(() => import("../pages/SupportTicketsPage"));
+const ComingSoon = lazy(() => import("../pages/ComingSoon"));
+const NotFound = lazy(() => import("../pages/NotFound"));
+const Home = lazy(() => import("../pages/home/Home"));
+const Categories = lazy(() => import("../pages/categories/Categories"));
+const Services = lazy(() => import("../pages/services/Services"));
+const ServiceDetail = lazy(() => import("../pages/services/ServiceDetail"));
+const Events = lazy(() => import("../pages/events/Events"));
+const EventDetail = lazy(() => import("../pages/events/EventDetail"));
+const About = lazy(() => import("../pages/about/About"));
+const ContactUs = lazy(() => import("../pages/contact/ContactUs"));
+const Privacy = lazy(() => import("../pages/privacy/Privacy"));
+const SafetyGuide = lazy(() => import("../pages/safety/SafetyGuide"));
+const SideGuruSuggestions = lazy(() => import("../pages/sideguru-suggestions/SideGuruSuggestions"));
 
 const AppRoutes = () => {
   return (
-    <Routes>
+    <Suspense fallback={<div className="flex h-screen items-center justify-center w-full"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#E97C35]"></div></div>}>
+      <Routes>
 
       {/* Public Layout Routes */}
       <Route element={<PublicLayout />}>
@@ -142,7 +146,8 @@ const AppRoutes = () => {
 
       </Route>
       <Route path="*" element={<NotFound />} />
-    </Routes>
+      </Routes>
+    </Suspense>
   );
 };
 
