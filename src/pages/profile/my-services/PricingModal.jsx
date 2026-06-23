@@ -18,6 +18,7 @@ import {
   selectServiceRenewError,
   selectServiceRenewLoading,
 } from "../../../features/services/servicesSlice";
+import { hasAuthSession } from "../../../utils/authSession";
 
 export default function PricingModal({
   isOpen,
@@ -203,6 +204,12 @@ export default function PricingModal({
   }, [submitError]);
 
   const handlePurchase = async () => {
+    if (!hasAuthSession()) {
+      toast.error("Your session expired. Please sign in again.");
+      navigate("/login?session=expired");
+      throw new Error("Authentication required");
+    }
+
     if (!serviceId) {
       toast.error(`Service ID not found for ${isRenewFlow ? "renew" : "purchase"}`);
       return null;
@@ -258,8 +265,8 @@ export default function PricingModal({
       }
 
       return null;
-    } catch {
-      return null;
+    } catch (error) {
+      throw error;
     }
   };
 
@@ -372,7 +379,9 @@ export default function PricingModal({
         )}
 
         <div className="px-6 pb-6 min-h-[48px]">
-          {(!pricingEligibility?.paypalClientId || Number(displayPlans.find(p => String(p.id) === String(selected))?.price || 0) === 0) ? (
+          {(!pricingEligibility?.paypalClientId ||
+            !hasAuthSession() ||
+            Number(displayPlans.find((p) => String(p.id) === String(selected))?.price || 0) === 0) ? (
             <button
               disabled={submitLoading || pricingLoading || !selected}
               className="w-full py-3 rounded-xl bg-[#E97C35] active:bg-[#c45a0f] text-white font-semibold text-sm tracking-wide transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-[#E97C35] focus:ring-offset-2 shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
@@ -386,13 +395,20 @@ export default function PricingModal({
                 style={{ layout: "vertical", shape: "rect", color: "gold" }}
                 disabled={submitLoading || pricingLoading || !selected}
                 createOrder={async () => {
-                  return await handlePurchase();
+                  const orderId = await handlePurchase();
+                  if (!orderId) {
+                    throw new Error("Unable to create PayPal order. Please try again.");
+                  }
+                  return orderId;
                 }}
-                onApprove={(data, actions) => {
+                onApprove={(data) => {
                   const successUrl = `/profile/my-services/purchase-success?serviceId=${encodeURIComponent(
                     serviceId
                   )}&planId=${encodeURIComponent(selected)}&flow=${encodeURIComponent(actionType)}&session_id=${data.orderID}`;
                   navigate(successUrl);
+                }}
+                onError={() => {
+                  toast.error(submitError || "PayPal checkout failed. Please try again.");
                 }}
               />
             </PayPalScriptProvider>

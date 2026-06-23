@@ -1,10 +1,11 @@
 import SEO from "../../components/SEO";
-import { useContext, useState } from "react";
+import { useContext, useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { AuthContext, ROLES } from "../../context/AuthContext";
+import { STORAGE_KEYS } from "../../utils/constants";
 import { signInWithPopup } from "firebase/auth";
 import {
   loginUser,
@@ -22,8 +23,15 @@ export default function Login() {
   const { login } = useContext(AuthContext);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const isLoggingIn = useSelector(selectLoginLoading);
   const isGoogleLoggingIn = useSelector(selectFirebaseLoginLoading);
+
+  useEffect(() => {
+    if (searchParams.get("session") === "expired") {
+      setError("Your session expired. Please sign in again.");
+    }
+  }, [searchParams]);
 
   const getErrorMessage = (err, fallbackMessage) => {
     if (!err) return fallbackMessage;
@@ -91,7 +99,7 @@ export default function Login() {
       };
 
       if (token) {
-        localStorage.setItem("authToken", token);
+        localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
       }
 
       login(userData, userRole);
@@ -139,7 +147,7 @@ export default function Login() {
       };
 
       if (token) {
-        localStorage.setItem("authToken", token);
+        localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
       }
 
       login(userData, userRole);

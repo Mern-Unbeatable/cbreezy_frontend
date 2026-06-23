@@ -1,10 +1,10 @@
 
 
 import axios from 'axios'
+import { STORAGE_KEYS } from '../utils/constants'
+import { clearAuthSession } from '../utils/authSession'
 
-
-const BASE_URL = 'https://api-cbreezy.maktechgroup.tech/'
-// const BASE_URL = 'http://localhost:3000/'
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/'
 
 
 const apiClient = axios.create({
@@ -14,6 +14,23 @@ const apiClient = axios.create({
     'Content-Type': 'application/json',
   },
 })
+
+const isAuthSessionError = (status, data) => {
+  if (status !== 401) return false
+
+  const message = String(data?.error || data?.message || '').toLowerCase()
+
+  if (message.includes('invalid_client') || message.includes('paypal')) {
+    return false
+  }
+
+  return (
+    data?.success === false ||
+    message.includes('token') ||
+    message.includes('login') ||
+    message.includes('no token')
+  )
+}
 
 /**
  * Request Interceptor
@@ -31,7 +48,7 @@ apiClient.interceptors.request.use(
     }
 
     // Get auth token from localStorage (if exists)
-    const token = localStorage.getItem('authToken')
+    const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN)
     
     // Add token to headers if available
     if (token) {
@@ -79,9 +96,12 @@ apiClient.interceptors.response.use(
 
       switch (status) {
         case 401:
-          // Unauthorized - clear token and redirect to login
-          console.error('Unauthorized access - logging out')
-          localStorage.removeItem('authToken')
+          if (isAuthSessionError(status, data)) {
+            console.error('Unauthorized access - logging out')
+            clearAuthSession({ redirectToLogin: true })
+          } else {
+            console.error('Payment or external service error:', data?.error || data?.message || status)
+          }
           break
         
         case 403:

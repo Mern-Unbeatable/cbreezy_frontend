@@ -1,6 +1,12 @@
 import { createContext, useState, useEffect } from "react";
 import { signOut } from "firebase/auth";
 import { firebaseAuth } from "../services/firebase";
+import {
+  AUTH_SESSION_EXPIRED_EVENT,
+  clearAuthSession,
+  getAuthToken,
+} from "../utils/authSession";
+import { STORAGE_KEYS } from "../utils/constants";
 
 export const AuthContext = createContext();
 
@@ -35,13 +41,28 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const savedUser = localStorage.getItem("user");
     const savedRole = localStorage.getItem("role");
-    
-    if (savedUser && savedRole) {
+    const token = getAuthToken();
+
+    if (savedUser && savedRole && token) {
       setUser(JSON.parse(savedUser));
       setRole(savedRole);
       setIsAuthenticated(true);
+    } else if (savedUser || savedRole || token) {
+      clearAuthSession();
     }
+
     setIsLoading(false);
+  }, []);
+
+  useEffect(() => {
+    const handleSessionExpired = () => {
+      setUser(null);
+      setRole(null);
+      setIsAuthenticated(false);
+    };
+
+    window.addEventListener(AUTH_SESSION_EXPIRED_EVENT, handleSessionExpired);
+    return () => window.removeEventListener(AUTH_SESSION_EXPIRED_EVENT, handleSessionExpired);
   }, []);
 
   /**
@@ -71,7 +92,7 @@ export function AuthProvider({ children }) {
     setIsAuthenticated(false);
     localStorage.removeItem("user");
     localStorage.removeItem("role");
-    localStorage.removeItem("authToken");
+    localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
 
     // Best-effort Firebase session cleanup for Google sign-in users.
     signOut(firebaseAuth).catch(() => {});
