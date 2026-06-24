@@ -19,6 +19,7 @@ import {
   selectEventRenewLoading,
 } from "../../../features/events/eventsSlice";
 import { hasAuthSession } from "../../../utils/authSession";
+import { buildPayPalScriptOptions, PAYPAL_SDK_LOAD_ERROR } from "../../../utils/paypalScriptOptions";
 
 export default function PricingModal({
   isOpen,
@@ -390,16 +391,28 @@ export default function PricingModal({
               {submitLoading ? "Processing..." : isRenewFlow ? "Renew Now" : "Activate"}
             </button>
           ) : (
-            <PayPalScriptProvider options={{ "client-id": pricingEligibility.paypalClientId, currency: "USD" }}>
+            <PayPalScriptProvider
+              options={buildPayPalScriptOptions(pricingEligibility.paypalClientId)}
+              onError={() => toast.error(PAYPAL_SDK_LOAD_ERROR)}
+            >
               <PayPalButtons
                 style={{ layout: "vertical", shape: "rect", color: "gold" }}
                 disabled={submitLoading || pricingLoading || !selected}
                 createOrder={async () => {
-                  const orderId = await handlePurchase();
-                  if (!orderId) {
-                    throw new Error("Unable to create PayPal order. Please try again.");
+                  try {
+                    const orderId = await handlePurchase();
+                    if (!orderId) {
+                      throw new Error("Unable to create PayPal order. Please try again.");
+                    }
+                    return orderId;
+                  } catch (error) {
+                    const message =
+                      typeof error === "string"
+                        ? error
+                        : error?.message || "Unable to create PayPal order. Please try again.";
+                    toast.error(message);
+                    throw error;
                   }
-                  return orderId;
                 }}
                 onApprove={(data) => {
                   const successUrl = `/profile/my-events/purchase-success?eventId=${encodeURIComponent(
