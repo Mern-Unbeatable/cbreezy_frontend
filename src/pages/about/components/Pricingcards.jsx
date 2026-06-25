@@ -33,19 +33,36 @@ export default function PricingCards() {
         return () => { mounted = false };
     }, []);
 
-    const currency = (meta?.stripeCurrency || "usd").toUpperCase();
+    const currency = (meta?.paypalCurrency || meta?.stripeCurrency || "USD").toUpperCase();
     const fmt = (value) => {
         try {
             const formatted = new Intl.NumberFormat(undefined, { style: "currency", currency }).format(value);
-            // If Intl produces a prefixed currency like "US$" or "CA$", remove the country letters
             return formatted.replace(/[A-Z]{1,3}(?=\$)/, "");
         } catch (e) {
             return `$${value}`;
         }
     };
 
-    const introPlan = plans.find((p) => p.isIntroductory) || plans[0];
-    const standardPlan = plans.find((p) => !p.isIntroductory) || plans[1] || plans[0];
+    const findPlanByTitle = (...keywords) =>
+        plans.find((plan) =>
+            keywords.some((keyword) => plan.title?.toLowerCase().includes(keyword.toLowerCase()))
+        );
+
+    const paidPlans = [...plans]
+        .filter((plan) => Number(plan.price) > 0)
+        .sort((a, b) => Number(a.price) - Number(b.price));
+
+    const introPlan =
+        findPlanByTitle("intro") ||
+        plans.find((plan) => plan.tier === "PROMO") ||
+        paidPlans[0] ||
+        null;
+
+    const standardPlan =
+        findPlanByTitle("standard") ||
+        [...paidPlans].reverse().find((plan) => plan.id !== introPlan?.id) ||
+        paidPlans[paidPlans.length - 1] ||
+        null;
 
     return (
         <div className="w-full min-h-screen flex items-center justify-center py-14 sm:py-16 md:py-20 px-4 sm:px-6 md:px-10 bg-[#FDF2EB]">

@@ -3,7 +3,7 @@ import apiClient from "../../services/apiClient";
 import { SUPPORT_ENDPOINTS } from "./supportEndpoints";
 
 const supportAdminClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "https://api-cbreezy.maktechgroup.tech/",
+  baseURL: import.meta.env.VITE_API_BASE_URL || "https://backend.sidegurus.com/",
 });
 
 supportAdminClient.interceptors.request.use((config) => {
