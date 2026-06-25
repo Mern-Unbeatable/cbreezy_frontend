@@ -141,7 +141,7 @@ export default function CategoryGrid({ searchQuery = "" }) {
               <div
                 key={`${category.id}-${getCategorySource(category)}`}
                 onClick={() => handleCategoryClick(category)}
-                className="flex flex-col overflow-hidden bg-white cursor-pointer rounded-md shadow-sm"
+                className="flex flex-col overflow-hidden  cursor-pointer rounded-md shadow-sm"
               >
                 <div className="overflow-hidden h-40 sm:h-48 md:h-52 shrink-0 bg-gray-100">
                   {!imgErrors[category.id] ? (
