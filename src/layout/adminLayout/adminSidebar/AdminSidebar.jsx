@@ -4,7 +4,7 @@
  * Left sidebar matching the admin dashboard reference layout.
  */
 
-import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useContext } from 'react'
 import {
   BarChart3,
@@ -18,20 +18,23 @@ import {
   Copy,
  
 } from 'lucide-react'
-import { AuthContext } from '../../../context/AuthContext'
+import { AuthContext, ROLES } from '../../../context/AuthContext'
 
 const Sidebar = ({ isOpen = true, onClose = null, isMobile = false }) => {
-  const { logout } = useContext(AuthContext)
+  const { logout, role } = useContext(AuthContext)
+  const navigate = useNavigate()
 
-  const menuItems = [
-    { name: 'Dashboard', path: '/admin/dashboard', icon: House  },
-    { name: 'Categories', path: '/admin/categories', icon: Copy  },
-    { name: 'User', path: '/admin/user', icon: UsersRound },
-    { name: 'Listings', path: '/admin/listings', icon: NotebookTabs  },
-    { name: 'Support Tickets', path: '/admin/support-tickets', icon: MessageSquare },
-    { name: 'Revenue', path: '/admin/revenue', icon: BarChart3 },
-    { name: 'Pricing & Country', path: '/admin/pricing', icon: Tag },
+  const allMenuItems = [
+    { name: 'Dashboard', path: '/admin/dashboard', icon: House, roles: [ROLES.ADMIN] },
+    { name: 'Categories', path: '/admin/categories', icon: Copy, roles: [ROLES.ADMIN] },
+    { name: 'User', path: '/admin/user', icon: UsersRound, roles: [ROLES.ADMIN] },
+    { name: 'Listings', path: '/admin/listings', icon: NotebookTabs, roles: [ROLES.ADMIN, ROLES.SUB_ADMIN] },
+    { name: 'Support Tickets', path: '/admin/support-tickets', icon: MessageSquare, roles: [ROLES.ADMIN] },
+    { name: 'Revenue', path: '/admin/revenue', icon: BarChart3, roles: [ROLES.ADMIN] },
+    { name: 'Pricing & Country', path: '/admin/pricing', icon: Tag, roles: [ROLES.ADMIN] },
   ]
+
+  const menuItems = allMenuItems.filter((item) => item.roles.includes(role))
 
   const sidebarContent = (
     <aside className="h-screen sticky top-0 bg-white border-r border-[#e6e6e6] flex flex-col overflow-hidden">
@@ -83,6 +86,7 @@ const Sidebar = ({ isOpen = true, onClose = null, isMobile = false }) => {
           type="button"
           onClick={() => {
             logout()
+            navigate('/signin')
             if (onClose) onClose()
           }}
           className="w-full flex items-center gap-2.5 rounded-md px-3 py-2 text-base text-[#4b5563] hover:bg-[#f5f5f5] transition-colors"

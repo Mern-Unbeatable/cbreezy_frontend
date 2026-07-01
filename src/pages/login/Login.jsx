@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
-import { AuthContext, ROLES } from "../../context/AuthContext";
+import { AuthContext, ROLES, normalizeAppRole } from "../../context/AuthContext";
 import { STORAGE_KEYS } from "../../utils/constants";
 import { signInWithPopup } from "firebase/auth";
 import {
@@ -90,8 +90,7 @@ export default function Login() {
       const data = response?.data || response?.result || response;
       const userFromApi = data?.user || data;
       const token = data?.token || data?.accessToken || userFromApi?.token;
-      const roleFromApi = String(userFromApi?.role || data?.role || ROLES.USER).toLowerCase();
-      const userRole = roleFromApi === ROLES.ADMIN ? ROLES.ADMIN : ROLES.USER;
+      const userRole = normalizeAppRole(userFromApi?.role || data?.role);
 
       const userData = {
         email: userFromApi?.email || email,
@@ -106,6 +105,8 @@ export default function Login() {
 
       if (userRole === ROLES.ADMIN) {
         navigate("/admin/dashboard");
+      } else if (userRole === ROLES.SUB_ADMIN) {
+        navigate("/admin/listings");
       } else {
         navigate("/profile");
       }
@@ -138,8 +139,7 @@ export default function Login() {
       const data = response?.data || response?.result || response;
       const userFromApi = data?.user || data;
       const token = data?.token || data?.accessToken || userFromApi?.token;
-      const roleFromApi = String(userFromApi?.role || data?.role || ROLES.USER).toLowerCase();
-      const userRole = roleFromApi === ROLES.ADMIN ? ROLES.ADMIN : ROLES.USER;
+      const userRole = normalizeAppRole(userFromApi?.role || data?.role);
 
       const userData = {
         email: userFromApi?.email || "",
@@ -154,6 +154,8 @@ export default function Login() {
 
       if (userRole === ROLES.ADMIN) {
         navigate("/admin/dashboard");
+      } else if (userRole === ROLES.SUB_ADMIN) {
+        navigate("/admin/listings");
       } else {
         navigate("/profile");
       }

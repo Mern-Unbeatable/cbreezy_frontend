@@ -54,7 +54,7 @@ const AdminUser = () => {
   const [isSubAdminModalOpen, setIsSubAdminModalOpen] = useState(false);
   const [subAdminModalMode, setSubAdminModalMode] = useState("create");
   const [selectedSubAdmin, setSelectedSubAdmin] = useState(null);
-  const resultsPerPage = 20;
+  const resultsPerPage = 6;
 
   const activeTabConfig = useMemo(
     () => USER_TABS.find((tab) => tab.key === activeTab) || USER_TABS[0],

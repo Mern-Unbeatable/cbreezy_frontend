@@ -1,7 +1,7 @@
 
 import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import { AdminRoute, UserRoute } from "../context/ProtectedRoutes";
+import { AdminRoute, ListingStaffRoute, UserRoute } from "../context/ProtectedRoutes";
 
 import PublicLayout from "../layout/publicLayout/PublicLayout";
 
@@ -23,6 +23,7 @@ const AdminCategories = lazy(() => import("../pages/admin/categories/AdminCatego
 const AdminUser = lazy(() => import("../pages/admin/user/AdminUser"));
 const AdminListings = lazy(() => import("../pages/admin/listings/AdminListings"));
 const AdminListingDetail = lazy(() => import("../pages/admin/listings/AdminListingDetail"));
+const AdminIndexRedirect = lazy(() => import("../pages/admin/AdminIndexRedirect"));
 const AdminRevenue = lazy(() => import("../pages/admin/revenue/AdminRevenue"));
 const AdminPricing = lazy(() => import("../pages/admin/pricing/AdminPricing"));
 const SupportTicketsPage = lazy(() => import("../pages/SupportTicketsPage"));
@@ -124,26 +125,63 @@ const AppRoutes = () => {
       <Route
         path="/admin"
         element={
-          <AdminRoute>
+          <ListingStaffRoute>
             <AdminLayout />
-          </AdminRoute>
+          </ListingStaffRoute>
         }
       >
-        {/* Redirect /admin to /admin/dashboard */}
-        <Route index element={<Navigate to="/admin/dashboard" replace />} />
+        <Route index element={<AdminIndexRedirect />} />
 
-        {/* Dashboard - Main admin page */}
-        <Route path="dashboard" element={<Dashboard />} />
-
-        {/* Image-matched admin sections */}
-        <Route path="categories" element={<AdminCategories />} />
-        <Route path="user" element={<AdminUser />} />
+        <Route
+          path="dashboard"
+          element={
+            <AdminRoute>
+              <Dashboard />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="categories"
+          element={
+            <AdminRoute>
+              <AdminCategories />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="user"
+          element={
+            <AdminRoute>
+              <AdminUser />
+            </AdminRoute>
+          }
+        />
         <Route path="listings" element={<AdminListings />} />
         <Route path="listings/:id" element={<AdminListingDetail />} />
-        <Route path="revenue" element={<AdminRevenue />} />
-        <Route path="support-tickets" element={<SupportTicketsPage />} />
-        <Route path="pricing" element={<AdminPricing />} />
-
+        <Route
+          path="revenue"
+          element={
+            <AdminRoute>
+              <AdminRevenue />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="support-tickets"
+          element={
+            <AdminRoute>
+              <SupportTicketsPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="pricing"
+          element={
+            <AdminRoute>
+              <AdminPricing />
+            </AdminRoute>
+          }
+        />
       </Route>
       <Route path="*" element={<NotFound />} />
       </Routes>

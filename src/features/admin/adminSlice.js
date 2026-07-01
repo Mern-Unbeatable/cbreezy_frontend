@@ -466,6 +466,7 @@ const initialState = {
     },
   },
   listingTabs: [
+    { key: "all", label: "All" },
     { key: "pending", label: "Pending" },
     { key: "approved", label: "Approved" },
     { key: "suspended", label: "Suspended" },
@@ -479,7 +480,7 @@ const initialState = {
   deleteListingError: null,
   listingsPagination: {
     page: 1,
-    limit: 20,
+    limit: 6,
     total: 0,
     totalPages: 1,
   },
@@ -488,7 +489,7 @@ const initialState = {
   usersError: null,
   usersPagination: {
     page: 1,
-    limit: 20,
+    limit: 6,
     total: 0,
     totalPages: 1,
   },
@@ -830,7 +831,7 @@ const adminSlice = createSlice({
         state.listings = [];
         state.listingsPagination = {
           page: 1,
-          limit: 20,
+          limit: 6,
           total: 0,
           totalPages: 1,
         };
@@ -958,7 +959,7 @@ const adminSlice = createSlice({
         );
 
         const total = Math.max(0, Number(state.usersPagination.total || 0) - 1);
-        const limit = Number(state.usersPagination.limit || 20) || 20;
+        const limit = Number(state.usersPagination.limit || 6) || 6;
         state.usersPagination.total = total;
         state.usersPagination.totalPages = Math.max(1, Math.ceil(total / limit));
       })

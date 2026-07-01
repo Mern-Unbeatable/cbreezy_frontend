@@ -8,11 +8,12 @@ import { useContext, useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import { Bell, Menu } from 'lucide-react'
 import Sidebar from './adminSidebar/AdminSidebar'
-import { AuthContext } from '../../context/AuthContext'
+import { AuthContext, ROLES } from '../../context/AuthContext'
 
 const AdminLayout = () => {
-  const { user } = useContext(AuthContext)
+  const { user, role } = useContext(AuthContext)
   const adminName = user?.name || 'Atik Adnan'
+  const roleLabel = role === ROLES.SUB_ADMIN ? 'Sub-Admin' : 'Admin'
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   return (
@@ -54,7 +55,7 @@ const AdminLayout = () => {
             />
             <div className="leading-tight hidden sm:block">
               <p className="text-[11px] font-semibold text-[#000000]">{adminName}</p>
-              <p className="text-sm text-[#000000]">Admin</p>
+              <p className="text-sm text-[#000000]">{roleLabel}</p>
             </div>
           </div>
         </header>

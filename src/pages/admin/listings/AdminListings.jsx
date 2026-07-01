@@ -1,9 +1,19 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Check, Eye, Trash2, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import Pagination from "../../../components/Pagination";
+import { AuthContext, ROLES } from "../../../context/AuthContext";
+import CreateServiceModal from "../../profile/my-services/CreateServiceModal";
+import CreateEventModal from "../../profile/my-events/CreateEventModal";
+import AddListingModal from "./AddListingModal";
+import {
+  canApproveListing,
+  canDeleteListing,
+  canSuspendListing,
+  getListingStatusKey,
+} from "./listingActions";
 import {
   deleteAdminListing,
   fetchAdminListings,
@@ -22,26 +32,39 @@ const MobileInfoField = ({ label, value, strong = false }) => (
 const AdminListings = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { role } = useContext(AuthContext);
+  const isAdmin = role === ROLES.ADMIN;
+  const isSubAdmin = role === ROLES.SUB_ADMIN;
   const listings = useSelector((state) => state.admin.listings);
   const listingsLoading = useSelector((state) => state.admin.listingsLoading);
   const listingsError = useSelector((state) => state.admin.listingsError);
   const listingsPagination = useSelector((state) => state.admin.listingsPagination);
   const tabs = useSelector((state) => state.admin.listingTabs);
-  const [activeTab, setActiveTab] = useState("pending");
+  const [activeTab, setActiveTab] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const resultsPerPage = 20;
+  const [isAddListingOpen, setIsAddListingOpen] = useState(false);
+  const [isCreateServiceOpen, setIsCreateServiceOpen] = useState(false);
+  const [isCreateEventOpen, setIsCreateEventOpen] = useState(false);
+  const resultsPerPage = 6;
 
   const totalPages = Math.max(1, Number(listingsPagination?.totalPages || 1));
   const paginatedListings = Array.isArray(listings) ? listings : [];
 
+  const buildListingsParams = (page = currentPage) => {
+    const params = {
+      page,
+      limit: resultsPerPage,
+    };
+
+    if (activeTab !== "all") {
+      params.status = activeTab.toUpperCase();
+    }
+
+    return params;
+  };
+
   useEffect(() => {
-    dispatch(
-      fetchAdminListings({
-        status: activeTab.toUpperCase(),
-        page: currentPage,
-        limit: resultsPerPage,
-      }),
-    );
+    dispatch(fetchAdminListings(buildListingsParams()));
   }, [activeTab, currentPage, dispatch]);
 
   useEffect(() => {
@@ -50,6 +73,7 @@ const AdminListings = () => {
     }
   }, [currentPage, totalPages]);
 
+  const showInitialLoader = listingsLoading && paginatedListings.length === 0;
   const showSpamReport = activeTab !== "pending";
 
   const handleViewListing = (item) => {
@@ -57,14 +81,78 @@ const AdminListings = () => {
     navigate(`/admin/listings/${item.id}`, { state: { listing: item } });
   };
 
-  const refetchCurrentTab = () =>
-    dispatch(
-      fetchAdminListings({
-        status: activeTab.toUpperCase(),
-        page: currentPage,
-        limit: resultsPerPage,
-      }),
+  const refetchCurrentTab = () => dispatch(fetchAdminListings(buildListingsParams()));
+
+  const handleAddListingType = (type) => {
+    setIsAddListingOpen(false);
+
+    if (type === "event") {
+      setIsCreateEventOpen(true);
+      return;
+    }
+
+    setIsCreateServiceOpen(true);
+  };
+
+  const handleListingCreated = async () => {
+    setIsCreateServiceOpen(false);
+    setIsCreateEventOpen(false);
+    await refetchCurrentTab();
+  };
+
+  const renderListingActions = (item, mobile = false) => {
+    const statusKey = getListingStatusKey(item);
+    const iconClass = mobile ? "h-5 w-5" : "h-5 w-5";
+    const buttonClass = mobile
+      ? "inline-flex min-h-10 min-w-10 items-center justify-center rounded-md"
+      : "inline-flex min-h-10 min-w-10 items-center justify-center rounded-md";
+
+    return (
+      <div className={`flex items-center gap-2 ${mobile ? "justify-end" : ""}`}>
+        <button
+          type="button"
+          className={`${buttonClass} text-[#000000] hover:bg-[#f3f4f6]`}
+          aria-label="View listing"
+          onClick={() => handleViewListing(item)}
+        >
+          <Eye className={iconClass} />
+        </button>
+
+        {canApproveListing(statusKey) && (
+          <button
+            type="button"
+            className={`${buttonClass} text-[#004C48] hover:bg-[#ecf2f1]`}
+            aria-label="Approve listing"
+            onClick={() => handleApproveListing(item.id)}
+          >
+            <Check className={iconClass} />
+          </button>
+        )}
+
+        {canSuspendListing(statusKey) && (
+          <button
+            type="button"
+            className={`${buttonClass} text-[#E00000] hover:bg-[#fff1f2]`}
+            aria-label="Suspend listing"
+            onClick={() => handleSuspendListing(item.id)}
+          >
+            <X className={iconClass} />
+          </button>
+        )}
+
+        {canDeleteListing(statusKey, isAdmin) && (
+          <button
+            type="button"
+            className={`${buttonClass} text-[#ef4444] hover:bg-[#fff1f2]`}
+            aria-label="Delete listing"
+            onClick={() => handleDeleteListing(item.id)}
+          >
+            <Trash2 className={iconClass} />
+          </button>
+        )}
+      </div>
     );
+  };
 
   const handleApproveListing = async (id) => {
     await toast.promise(
@@ -116,52 +204,54 @@ const AdminListings = () => {
         <p className="mt-2 text-sm md:text-base text-[#6b7280]">
           Review and moderate platform listings.
         </p>
+        {listingsError && <p className="mt-2 text-sm text-red-600">{listingsError}</p>}
       </div>
 
       <div className="rounded-lg overflow-hidden">
         <div className="px-2 md:px-3 py-4 overflow-x-auto">
-          <div className="flex justify-start gap-4 md:gap-8 min-w-max">
-            {tabs.map((tab) => (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() => {
-                  setActiveTab(tab.key);
-                  setCurrentPage(1);
-                }}
-                className={`relative w-26 md:w-60 py-4 md:py-5 text-base md:text-lg font-semibold transition-colors text-center whitespace-nowrap cursor-pointer ${
-                  activeTab === tab.key ? "text-[#004C48]" : "text-[#373737]"
-                }`}
-              >
-                {tab.label}
-                <span
-                  className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 md:h-0.75 rounded-full transition-all duration-200 ${
-                    activeTab === tab.key
-                      ? "w-full bg-[#0f172a]"
-                      : "w-0 bg-transparent"
+          <div className="flex items-center justify-between gap-4 min-w-max">
+            <div className="flex justify-start gap-4 md:gap-8">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => {
+                    setActiveTab(tab.key);
+                    setCurrentPage(1);
+                  }}
+                  className={`relative w-26 md:w-60 py-4 md:py-5 text-base md:text-lg font-semibold transition-colors text-center whitespace-nowrap cursor-pointer ${
+                    activeTab === tab.key ? "text-[#004C48]" : "text-[#373737]"
                   }`}
-                />
+                >
+                  {tab.label}
+                  <span
+                    className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 md:h-0.75 rounded-full transition-all duration-200 ${
+                      activeTab === tab.key
+                        ? "w-full bg-[#0f172a]"
+                        : "w-0 bg-transparent"
+                    }`}
+                  />
+                </button>
+              ))}
+            </div>
+
+            {isSubAdmin && (
+              <button
+                type="button"
+                onClick={() => setIsAddListingOpen(true)}
+                className="h-10 shrink-0 rounded-md bg-[#E97C35] px-4 text-sm font-medium text-white hover:bg-[#cf6d2e]"
+              >
+                Add listing
               </button>
-            ))}
+            )}
           </div>
         </div>
 
-        <div className="px-2 md:px-4 py-4 md:py-6 border border-[#ececec] bg-[#ffffff] shadow-sm">
-          <h2 className="text-lg sm:text-xl md:text-[24px] leading-none font-semibold text-[#111827]">
-            Listing List
-          </h2>
-          {listingsError && <p className="mt-2 text-sm text-red-600">{listingsError}</p>}
-        </div>
-
-        {listingsLoading && (
-          <div className="px-2 md:px-4 py-6 text-sm text-[#6b7280]">Loading listings...</div>
-        )}
-
         {/* Desktop Table */}
-        <div className="hidden sm:block overflow-x-auto overscroll-x-contain">
+        <div className="hidden sm:block overflow-x-auto overscroll-x-contain border-x border-b border-[#ececec] bg-white">
           <table className="w-full min-w-225 text-left text-sm md:text-base">
             <thead>
-              <tr className="border-b border-[#efefef] text-sm md:text-base text-[#000000] bg-[#F9FAFB]">
+              <tr className="border-b border-[#efefef] text-sm md:text-base text-[#111827] bg-[#F9FAFB]">
                 <th className="px-2 md:px-4 py-2 md:py-3 font-medium whitespace-nowrap">
                   Listing Name
                 </th>
@@ -192,6 +282,16 @@ const AdminListings = () => {
             </thead>
 
             <tbody>
+              {showInitialLoader ? (
+                <tr>
+                  <td colSpan={showSpamReport ? 8 : 7} className="px-4 py-16">
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#E97C35]" />
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                <>
               {paginatedListings.map((item) => (
                 <tr
                   key={item.id}
@@ -223,71 +323,7 @@ const AdminListings = () => {
                     </td>
                   )}
                   <td className="px-2 md:px-4 py-3 md:py-4">
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-md text-[#000000] hover:bg-[#f3f4f6]"
-                        aria-label="View listing"
-                        onClick={() => handleViewListing(item)}
-                      >
-                        <Eye className="h-5 w-5" />
-                      </button>
-
-                      {activeTab === "pending" && (
-                        <button
-                          type="button"
-                          className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-md text-[#004C48] hover:bg-[#ecf2f1]"
-                          aria-label="Approve listing"
-                          onClick={() => handleApproveListing(item.id)}
-                        >
-                          <Check className="h-5 w-5" />
-                        </button>
-                      )}
-
-                      {activeTab === "suspended" && (
-                        <button
-                          type="button"
-                          className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-md text-[#004C48] hover:bg-[#ecf2f1]"
-                          aria-label="Approve listing"
-                          onClick={() => handleApproveListing(item.id)}
-                        >
-                          <Check className="h-5 w-5" />
-                        </button>
-                      )}
-
-                      {activeTab === "approved" && (
-                        <button
-                          type="button"
-                          className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-md text-[#E00000] hover:bg-[#fff1f2]"
-                          aria-label="Suspend listing"
-                          onClick={() => handleSuspendListing(item.id)}
-                        >
-                          <X className="h-5 w-5" />
-                        </button>
-                      )}
-
-                      {(activeTab === "approved" || activeTab === "suspended") && (
-                        <button
-                          type="button"
-                          className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-md text-[#ef4444] hover:bg-[#fff1f2]"
-                          aria-label="Delete listing"
-                          onClick={() => handleDeleteListing(item.id)}
-                        >
-                          <Trash2 className="h-5 w-5" />
-                        </button>
-                      )}
-
-                      {activeTab === "pending" && (
-                        <button
-                          type="button"
-                          className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-md text-[#E00000] hover:bg-[#fff1f2]"
-                          aria-label="Suspend listing"
-                          onClick={() => handleSuspendListing(item.id)}
-                        >
-                          <X className="h-5 w-5" />
-                        </button>
-                      )}
-                    </div>
+                    {renderListingActions(item)}
                   </td>
                 </tr>
               ))}
@@ -295,20 +331,27 @@ const AdminListings = () => {
               {!listingsLoading && paginatedListings.length === 0 && (
                 <tr>
                   <td
-                    colSpan={showSpamReport ? 7 : 6}
+                    colSpan={showSpamReport ? 8 : 7}
                     className="px-4 py-6 text-center text-sm text-[#6b7280]"
                   >
                     No listings found.
                   </td>
                 </tr>
               )}
+                </>
+              )}
             </tbody>
           </table>
         </div>
 
         {/* Mobile Cards */}
-        <div className="sm:hidden">
-          <div className="space-y-3">
+        <div className="sm:hidden border-x border-b border-[#ececec] bg-white">
+          {showInitialLoader ? (
+            <div className="flex min-h-[280px] items-center justify-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#E97C35]" />
+            </div>
+          ) : (
+          <div className="space-y-3 p-3">
             {paginatedListings.map((item) => (
               <article
                 key={item.id}
@@ -342,71 +385,7 @@ const AdminListings = () => {
                   <MobileInfoField label="Location" value={item.location} />
 
                   <div className="mt-auto border-t border-[#ececec] pt-3">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        type="button"
-                        className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-md text-[#111827] hover:bg-[#f3f4f6]"
-                        aria-label="View listing"
-                        onClick={() => handleViewListing(item)}
-                      >
-                        <Eye className="h-5 w-5" />
-                      </button>
-
-                      {activeTab === "pending" && (
-                        <button
-                          type="button"
-                          className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-md text-[#0f766e] hover:bg-[#ecfdf5]"
-                          aria-label="Approve listing"
-                          onClick={() => handleApproveListing(item.id)}
-                        >
-                          <Check className="h-5 w-5" />
-                        </button>
-                      )}
-
-                      {activeTab === "suspended" && (
-                        <button
-                          type="button"
-                          className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-md text-[#0f766e] hover:bg-[#ecfdf5]"
-                          aria-label="Approve listing"
-                          onClick={() => handleApproveListing(item.id)}
-                        >
-                          <Check className="h-5 w-5" />
-                        </button>
-                      )}
-
-                      {activeTab === "approved" && (
-                        <button
-                          type="button"
-                          className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-md text-[#ef4444] hover:bg-[#fff1f2]"
-                          aria-label="Suspend listing"
-                          onClick={() => handleSuspendListing(item.id)}
-                        >
-                          <X className="h-5 w-5" />
-                        </button>
-                      )}
-
-                      {(activeTab === "approved" || activeTab === "suspended") && (
-                        <button
-                          type="button"
-                          className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-md text-[#ef4444] hover:bg-[#fff1f2]"
-                          aria-label="Delete listing"
-                          onClick={() => handleDeleteListing(item.id)}
-                        >
-                          <Trash2 className="h-5 w-5" />
-                        </button>
-                      )}
-
-                      {activeTab === "pending" && (
-                        <button
-                          type="button"
-                          className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-md text-[#ef4444] hover:bg-[#fff1f2]"
-                          aria-label="Suspend listing"
-                          onClick={() => handleSuspendListing(item.id)}
-                        >
-                          <X className="h-5 w-5" />
-                        </button>
-                      )}
-                    </div>
+                    {renderListingActions(item, true)}
                   </div>
 
                 </div>
@@ -419,6 +398,7 @@ const AdminListings = () => {
               </div>
             )}
           </div>
+          )}
         </div>
 
         <div className="mt-3 md:mt-4 px-2 sm:px-3 md:px-4 pb-2 md:pb-3 flex justify-center">
@@ -431,6 +411,26 @@ const AdminListings = () => {
           />
         </div>
       </div>
+
+      <AddListingModal
+        isOpen={isAddListingOpen}
+        onClose={() => setIsAddListingOpen(false)}
+        onSelectType={handleAddListingType}
+      />
+
+      <CreateServiceModal
+        isOpen={isCreateServiceOpen}
+        onClose={() => setIsCreateServiceOpen(false)}
+        onSaved={handleListingCreated}
+        complimentaryListing={isSubAdmin}
+      />
+
+      <CreateEventModal
+        isOpen={isCreateEventOpen}
+        onClose={() => setIsCreateEventOpen(false)}
+        onSaved={handleListingCreated}
+        complimentaryListing={isSubAdmin}
+      />
     </div>
   );
 };

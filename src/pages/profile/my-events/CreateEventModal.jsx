@@ -27,7 +27,7 @@ import {
   selectCitiesLoading,
 } from "../../../features/auth/authSlice";
 
-export default function CreateEventModal({ isOpen, onClose, editEvent = null, onSaved }) {
+export default function CreateEventModal({ isOpen, onClose, editEvent = null, onSaved, complimentaryListing = false }) {
   const dispatch = useDispatch();
   const isEditMode = Boolean(editEvent?.id);
   const [updateLoading, setUpdateLoading] = useState(false);
@@ -452,9 +452,37 @@ export default function CreateEventModal({ isOpen, onClose, editEvent = null, on
         return;
       }
 
-      toast.info("Event created — please complete payment to activate.");
+      toast.info(complimentaryListing ? "Event created — activating listing..." : "Event created — please complete payment to activate.");
       const eventId = String(result.eventId);
-      // fetch pricing eligibility and decide flow
+
+      if (complimentaryListing) {
+        try {
+          const eligibility = await dispatch(fetchEventPricingPlansEligibility()).unwrap();
+          const plan = eligibility?.plans?.[0];
+          if (!plan?.id) {
+            toast.error("No pricing plan available to activate listing");
+            return;
+          }
+
+          const successUrl = `${window.location.origin}/admin/listings`;
+          const cancelUrl = `${window.location.origin}/admin/listings`;
+          await dispatch(
+            purchaseEvent({
+              eventId,
+              payload: { planId: plan.id, successUrl, cancelUrl },
+            }),
+          ).unwrap();
+
+          toast.success("Event published successfully");
+          if (onSaved) onSaved();
+          handleCloseCreateModal();
+          return;
+        } catch (error) {
+          toast.error(error || "Failed to activate listing");
+          return;
+        }
+      }
+
       try {
         const eligibility = await dispatch(fetchEventPricingPlansEligibility()).unwrap();
         const plans = eligibility?.plans || [];

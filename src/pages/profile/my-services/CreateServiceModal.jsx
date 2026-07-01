@@ -29,7 +29,7 @@ import {
   selectCitiesLoading,
 } from "../../../features/auth/authSlice";
 
-export default function CreateServiceModal({ isOpen, onClose, editService = null, onSaved }) {
+export default function CreateServiceModal({ isOpen, onClose, editService = null, onSaved, complimentaryListing = false }) {
   const dispatch = useDispatch();
   const isEditMode = Boolean(editService?.id);
   const [isPricingOpen, setIsPricingOpen] = useState(false);
@@ -433,8 +433,37 @@ export default function CreateServiceModal({ isOpen, onClose, editService = null
         return;
       }
 
-      toast.info("Service created — please complete payment to activate.");
+      toast.info(complimentaryListing ? "Service created — activating listing..." : "Service created — please complete payment to activate.");
       const serviceId = String(result.serviceId);
+
+      if (complimentaryListing) {
+        try {
+          const eligibility = await dispatch(fetchPricingPlansEligibility()).unwrap();
+          const plan = eligibility?.plans?.[0];
+          if (!plan?.id) {
+            toast.error("No pricing plan available to activate listing");
+            return;
+          }
+
+          const successUrl = `${window.location.origin}/admin/listings`;
+          const cancelUrl = `${window.location.origin}/admin/listings`;
+          await dispatch(
+            purchaseService({
+              serviceId,
+              payload: { planId: plan.id, successUrl, cancelUrl },
+            }),
+          ).unwrap();
+
+          toast.success("Listing published successfully");
+          if (onSaved) onSaved();
+          handleCloseCreateModal();
+          return;
+        } catch (error) {
+          toast.error(error || "Failed to activate listing");
+          return;
+        }
+      }
+
       try {
         const eligibility = await dispatch(fetchPricingPlansEligibility()).unwrap();
         const plans = eligibility?.plans || [];

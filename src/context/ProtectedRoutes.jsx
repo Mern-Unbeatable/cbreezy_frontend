@@ -43,15 +43,39 @@ export function ProtectedRoute({ children }) {
 }
 
 /**
+ * ListingStaffRoute Component
+ *
+ * Allows admin and sub-admin access to listing management pages.
+ */
+export function ListingStaffRoute({ children }) {
+  const { isAuthenticated, role, isLoading } = useContext(AuthContext);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (role !== ROLES.ADMIN && role !== ROLES.SUB_ADMIN) {
+    return <NotFound />;
+  }
+
+  return children;
+}
+
+/**
  * AdminRoute Component
  *
  * Protects routes that are only accessible to admins.
- * Redirects non-admin users to a 404 or home page.
- *
- * Usage:
- * <AdminRoute>
- *   <AdminDashboard />
- * </AdminRoute>
  */
 export function AdminRoute({ children }) {
   const { isAuthenticated, role, isLoading } = useContext(AuthContext);
@@ -67,12 +91,14 @@ export function AdminRoute({ children }) {
     );
   }
 
-  // Not authenticated - redirect to login
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
-  // Not admin - show 404
+  if (role === ROLES.SUB_ADMIN) {
+    return <Navigate to="/admin/listings" replace />;
+  }
+
   if (role !== ROLES.ADMIN) {
     return <NotFound />;
   }
@@ -112,6 +138,10 @@ export function UserRoute({ children }) {
 
   // Wrong role - redirect to appropriate dashboard
   if (role !== ROLES.USER) {
+    if (role === ROLES.SUB_ADMIN) {
+      return <Navigate to="/admin/listings" replace />;
+    }
+
     return <Navigate to="/admin/dashboard" replace />;
   }
 

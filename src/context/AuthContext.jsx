@@ -16,6 +16,21 @@ export const AuthContext = createContext();
 export const ROLES = {
   USER: "user",
   ADMIN: "admin",
+  SUB_ADMIN: "sub_admin",
+};
+
+export const normalizeAppRole = (roleFromApi) => {
+  const role = String(roleFromApi || ROLES.USER).toLowerCase();
+
+  if (role === ROLES.ADMIN || role === "admin") {
+    return ROLES.ADMIN;
+  }
+
+  if (role === ROLES.SUB_ADMIN || role === "sub_admin") {
+    return ROLES.SUB_ADMIN;
+  }
+
+  return ROLES.USER;
 };
 
 /**
@@ -71,7 +86,6 @@ export function AuthProvider({ children }) {
    * @param {string} userRole - User role (user or admin)
    */
   const login = (userData, userRole) => {
-    // Validate role
     const validRole = Object.values(ROLES).includes(userRole) ? userRole : ROLES.USER;
     
     setUser(userData);
@@ -115,6 +129,14 @@ export function AuthProvider({ children }) {
     return role === ROLES.ADMIN;
   };
 
+  const isSubAdmin = () => {
+    return role === ROLES.SUB_ADMIN;
+  };
+
+  const isListingStaff = () => {
+    return role === ROLES.ADMIN || role === ROLES.SUB_ADMIN;
+  };
+
   /**
    * Check if user is regular user
    * @returns {boolean}
@@ -132,6 +154,8 @@ export function AuthProvider({ children }) {
     logout,
     hasRole,
     isAdmin,
+    isSubAdmin,
+    isListingStaff,
     isUser,
   };
 
