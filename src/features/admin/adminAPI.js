@@ -213,10 +213,12 @@ const normalizeAdminUser = (item) => ({
   phone: item?.phoneNumber ?? item?.phone ?? "N/A",
   country: item?.country?.name ?? item?.countryName ?? item?.country ?? "N/A",
   location: item?.region?.name ?? item?.regionName ?? item?.location ?? "N/A",
-  listings: Number(item?.listingsCount ?? item?.listings ?? item?.totalListings ?? 0),
+  listings: Number(item?.activeListingsCount ?? item?.listingsCount ?? item?.listings ?? item?.totalListings ?? 0),
   joined: item?.createdAt
     ? new Date(item.createdAt).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "2-digit" })
     : item?.joined || "N/A",
+  role: item?.role ?? "USER",
+  isActive: item?.isActive !== false,
   raw: item,
 });
 
@@ -391,6 +393,33 @@ export const fetchAdminUserByIdAPI = async (managedUserId) => {
 export const deleteAdminUserAPI = async (managedUserId) => {
   const response = await apiClient.delete(`/api/admin/users/${managedUserId}`);
   return response?.data;
+};
+
+export const createAdminSubAdminAPI = async ({ fullName, email, password }) => {
+  const response = await apiClient.post("/api/admin/users/sub-admins", {
+    fullName,
+    email,
+    password,
+  });
+  const payload = extractPayload(response.data);
+  return normalizeAdminUser(payload);
+};
+
+export const updateAdminSubAdminAPI = async ({ managedUserId, fullName, email, password }) => {
+  const body = {};
+  if (fullName !== undefined) body.fullName = fullName;
+  if (email !== undefined) body.email = email;
+  if (password !== undefined) body.password = password;
+
+  const response = await apiClient.put(`/api/admin/users/${managedUserId}`, body);
+  const payload = extractPayload(response.data);
+  return normalizeAdminUser(payload);
+};
+
+export const updateAdminSubAdminStatusAPI = async ({ managedUserId, isActive }) => {
+  const response = await apiClient.patch(`/api/admin/users/${managedUserId}/status`, { isActive });
+  const payload = extractPayload(response.data);
+  return normalizeAdminUser(payload);
 };
 
 const normalizeCategory = (item, type = "service") => ({

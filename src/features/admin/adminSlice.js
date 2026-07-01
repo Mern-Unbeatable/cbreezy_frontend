@@ -11,6 +11,7 @@ import {
   fetchAdminListingsAPI,
   createAdminPricingPlanAPI,
   createAdminRegionAPI,
+  createAdminSubAdminAPI,
   createEventCategoryAPI,
   createServiceCategoryAPI,
   createServiceSubCategoryAPI,
@@ -28,6 +29,8 @@ import {
   updateAdminPricingPlanAPI,
   updateAdminRegionAPI,
   updateAdminServiceCategoryAPI,
+  updateAdminSubAdminAPI,
+  updateAdminSubAdminStatusAPI,
   createAdminCityAPI,
   updateAdminCityAPI,
   deleteAdminCityAPI,
@@ -122,6 +125,39 @@ export const deleteAdminUser = createAsyncThunk(
     try {
       await deleteAdminUserAPI(managedUserId);
       return managedUserId;
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error));
+    }
+  },
+);
+
+export const createAdminSubAdmin = createAsyncThunk(
+  "admin/createAdminSubAdmin",
+  async (payload, { rejectWithValue }) => {
+    try {
+      return await createAdminSubAdminAPI(payload);
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error));
+    }
+  },
+);
+
+export const updateAdminSubAdmin = createAsyncThunk(
+  "admin/updateAdminSubAdmin",
+  async (payload, { rejectWithValue }) => {
+    try {
+      return await updateAdminSubAdminAPI(payload);
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error));
+    }
+  },
+);
+
+export const updateAdminSubAdminStatus = createAsyncThunk(
+  "admin/updateAdminSubAdminStatus",
+  async ({ managedUserId, isActive }, { rejectWithValue }) => {
+    try {
+      return await updateAdminSubAdminStatusAPI({ managedUserId, isActive });
     } catch (error) {
       return rejectWithValue(getErrorMessage(error));
     }
@@ -461,6 +497,12 @@ const initialState = {
   selectedUserError: null,
   deleteUserLoadingById: {},
   deleteUserError: null,
+  createSubAdminLoading: false,
+  createSubAdminError: null,
+  updateSubAdminLoadingById: {},
+  updateSubAdminError: null,
+  updateSubAdminStatusLoadingById: {},
+  updateSubAdminStatusError: null,
   serviceCategories: [],
   eventCategories: [],
   categoriesLoading: false,
@@ -924,6 +966,67 @@ const adminSlice = createSlice({
         const managedUserId = String(action.meta.arg);
         state.deleteUserLoadingById[managedUserId] = false;
         state.deleteUserError = action.payload || "Failed to delete user";
+      })
+      .addCase(createAdminSubAdmin.pending, (state) => {
+        state.createSubAdminLoading = true;
+        state.createSubAdminError = null;
+      })
+      .addCase(createAdminSubAdmin.fulfilled, (state, action) => {
+        state.createSubAdminLoading = false;
+        if (action.payload?.id) {
+          state.users = [action.payload, ...state.users];
+          state.usersPagination.total = Number(state.usersPagination.total || 0) + 1;
+        }
+      })
+      .addCase(createAdminSubAdmin.rejected, (state, action) => {
+        state.createSubAdminLoading = false;
+        state.createSubAdminError = action.payload || "Failed to create sub-admin";
+      })
+      .addCase(updateAdminSubAdmin.pending, (state, action) => {
+        const managedUserId = String(action.meta.arg?.managedUserId || "");
+        if (managedUserId) {
+          state.updateSubAdminLoadingById[managedUserId] = true;
+        }
+        state.updateSubAdminError = null;
+      })
+      .addCase(updateAdminSubAdmin.fulfilled, (state, action) => {
+        const managedUserId = String(action.payload?.id || "");
+        if (managedUserId) {
+          state.updateSubAdminLoadingById[managedUserId] = false;
+        }
+        state.users = state.users.map((item) =>
+          String(item.id) === managedUserId ? { ...item, ...action.payload } : item,
+        );
+      })
+      .addCase(updateAdminSubAdmin.rejected, (state, action) => {
+        const managedUserId = String(action.meta.arg?.managedUserId || "");
+        if (managedUserId) {
+          state.updateSubAdminLoadingById[managedUserId] = false;
+        }
+        state.updateSubAdminError = action.payload || "Failed to update sub-admin";
+      })
+      .addCase(updateAdminSubAdminStatus.pending, (state, action) => {
+        const managedUserId = String(action.meta.arg?.managedUserId || "");
+        if (managedUserId) {
+          state.updateSubAdminStatusLoadingById[managedUserId] = true;
+        }
+        state.updateSubAdminStatusError = null;
+      })
+      .addCase(updateAdminSubAdminStatus.fulfilled, (state, action) => {
+        const managedUserId = String(action.payload?.id || "");
+        if (managedUserId) {
+          state.updateSubAdminStatusLoadingById[managedUserId] = false;
+        }
+        state.users = state.users.map((item) =>
+          String(item.id) === managedUserId ? { ...item, ...action.payload } : item,
+        );
+      })
+      .addCase(updateAdminSubAdminStatus.rejected, (state, action) => {
+        const managedUserId = String(action.meta.arg?.managedUserId || "");
+        if (managedUserId) {
+          state.updateSubAdminStatusLoadingById[managedUserId] = false;
+        }
+        state.updateSubAdminStatusError = action.payload || "Failed to update sub-admin status";
       })
       .addCase(fetchAdminCategories.pending, (state) => {
         state.categoriesLoading = true;
