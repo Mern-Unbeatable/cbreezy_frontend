@@ -1,6 +1,6 @@
 import { useContext } from "react";
 import { Navigate } from "react-router-dom";
-import { AuthContext, ROLES } from "../../../context/AuthContext";
+import { AuthContext, ROLES } from "../../context/AuthContext";
 
 const AdminIndexRedirect = () => {
   const { role } = useContext(AuthContext);
