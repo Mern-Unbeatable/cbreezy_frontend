@@ -60,7 +60,7 @@ export function AuthProvider({ children }) {
 
     if (savedUser && savedRole && token) {
       setUser(JSON.parse(savedUser));
-      setRole(savedRole);
+      setRole(normalizeAppRole(savedRole));
       setIsAuthenticated(true);
     } else if (savedUser || savedRole || token) {
       clearAuthSession();

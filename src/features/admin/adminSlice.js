@@ -36,6 +36,13 @@ import {
   deleteAdminCityAPI,
 } from "./adminAPI";
 
+const serializeListingsParams = (params = {}) =>
+  JSON.stringify({
+    page: Number(params.page) || 1,
+    limit: Number(params.limit) || 6,
+    status: params.status ? String(params.status).toUpperCase() : "ALL",
+  });
+
 const getErrorMessage = (error) =>
   error?.response?.data?.message ||
   error?.response?.data?.error ||
@@ -474,6 +481,7 @@ const initialState = {
   listings: [],
   listingsLoading: false,
   listingsError: null,
+  listingsRequestKey: "",
   updateListingStatusLoadingById: {},
   updateListingStatusError: null,
   deleteListingLoadingById: {},
@@ -816,16 +824,26 @@ const adminSlice = createSlice({
         state.usersLoading = true;
         state.usersError = null;
       })
-      .addCase(fetchAdminListings.pending, (state) => {
+      .addCase(fetchAdminListings.pending, (state, action) => {
         state.listingsLoading = true;
         state.listingsError = null;
+        state.listings = [];
+        state.listingsRequestKey = serializeListingsParams(action.meta.arg);
       })
       .addCase(fetchAdminListings.fulfilled, (state, action) => {
+        if (serializeListingsParams(action.meta.arg) !== state.listingsRequestKey) {
+          return;
+        }
+
         state.listingsLoading = false;
         state.listings = action.payload.items;
         state.listingsPagination = action.payload.pagination;
       })
       .addCase(fetchAdminListings.rejected, (state, action) => {
+        if (serializeListingsParams(action.meta.arg) !== state.listingsRequestKey) {
+          return;
+        }
+
         state.listingsLoading = false;
         state.listingsError = action.payload || "Failed to load listings";
         state.listings = [];

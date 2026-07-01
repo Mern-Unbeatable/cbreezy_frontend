@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { Upload, X } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
+import { AuthContext, ROLES } from "../../../context/AuthContext";
 import PricingModal from "./PricingModal";
 import {
   createService,
@@ -31,6 +32,8 @@ import {
 
 export default function CreateServiceModal({ isOpen, onClose, editService = null, onSaved, complimentaryListing = false }) {
   const dispatch = useDispatch();
+  const { role } = useContext(AuthContext);
+  const isComplimentaryFlow = complimentaryListing || role === ROLES.SUB_ADMIN;
   const isEditMode = Boolean(editService?.id);
   const [isPricingOpen, setIsPricingOpen] = useState(false);
   const [updateLoading, setUpdateLoading] = useState(false);
@@ -433,13 +436,15 @@ export default function CreateServiceModal({ isOpen, onClose, editService = null
         return;
       }
 
-      toast.info(complimentaryListing ? "Service created — activating listing..." : "Service created — please complete payment to activate.");
+      toast.info(isComplimentaryFlow ? "Service created — activating listing..." : "Service created — please complete payment to activate.");
       const serviceId = String(result.serviceId);
 
-      if (complimentaryListing) {
+      if (isComplimentaryFlow) {
         try {
           const eligibility = await dispatch(fetchPricingPlansEligibility()).unwrap();
-          const plan = eligibility?.plans?.[0];
+          const plan =
+            eligibility?.plans?.find((item) => item?.id) ||
+            eligibility?.plans?.[0];
           if (!plan?.id) {
             toast.error("No pricing plan available to activate listing");
             return;
@@ -455,8 +460,8 @@ export default function CreateServiceModal({ isOpen, onClose, editService = null
           ).unwrap();
 
           toast.success("Listing published successfully");
-          if (onSaved) onSaved();
           handleCloseCreateModal();
+          if (onSaved) await onSaved();
           return;
         } catch (error) {
           toast.error(error || "Failed to activate listing");

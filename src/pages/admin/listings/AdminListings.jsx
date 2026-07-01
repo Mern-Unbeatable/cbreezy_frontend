@@ -32,9 +32,9 @@ const MobileInfoField = ({ label, value, strong = false }) => (
 const AdminListings = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { role } = useContext(AuthContext);
+  const { role, isSubAdmin: checkIsSubAdmin } = useContext(AuthContext);
   const isAdmin = role === ROLES.ADMIN;
-  const isSubAdmin = role === ROLES.SUB_ADMIN;
+  const isSubAdmin = checkIsSubAdmin();
   const listings = useSelector((state) => state.admin.listings);
   const listingsLoading = useSelector((state) => state.admin.listingsLoading);
   const listingsError = useSelector((state) => state.admin.listingsError);
@@ -73,7 +73,7 @@ const AdminListings = () => {
     }
   }, [currentPage, totalPages]);
 
-  const showInitialLoader = listingsLoading && paginatedListings.length === 0;
+  const showLoader = listingsLoading;
   const showSpamReport = activeTab !== "pending";
 
   const handleViewListing = (item) => {
@@ -282,7 +282,7 @@ const AdminListings = () => {
             </thead>
 
             <tbody>
-              {showInitialLoader ? (
+              {showLoader ? (
                 <tr>
                   <td colSpan={showSpamReport ? 8 : 7} className="px-4 py-16">
                     <div className="flex items-center justify-center">
@@ -346,7 +346,7 @@ const AdminListings = () => {
 
         {/* Mobile Cards */}
         <div className="sm:hidden border-x border-b border-[#ececec] bg-white">
-          {showInitialLoader ? (
+          {showLoader ? (
             <div className="flex min-h-[280px] items-center justify-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#E97C35]" />
             </div>

@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Upload, X } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
+import { AuthContext, ROLES } from "../../../context/AuthContext";
 import PricingModal from "./PricingModal";
 import {
   createEvent,
@@ -29,6 +30,8 @@ import {
 
 export default function CreateEventModal({ isOpen, onClose, editEvent = null, onSaved, complimentaryListing = false }) {
   const dispatch = useDispatch();
+  const { role } = useContext(AuthContext);
+  const isComplimentaryFlow = complimentaryListing || role === ROLES.SUB_ADMIN;
   const isEditMode = Boolean(editEvent?.id);
   const [updateLoading, setUpdateLoading] = useState(false);
   const createLoading = useSelector(selectCreateEventLoading);
@@ -452,13 +455,15 @@ export default function CreateEventModal({ isOpen, onClose, editEvent = null, on
         return;
       }
 
-      toast.info(complimentaryListing ? "Event created — activating listing..." : "Event created — please complete payment to activate.");
+      toast.info(isComplimentaryFlow ? "Event created — activating listing..." : "Event created — please complete payment to activate.");
       const eventId = String(result.eventId);
 
-      if (complimentaryListing) {
+      if (isComplimentaryFlow) {
         try {
           const eligibility = await dispatch(fetchEventPricingPlansEligibility()).unwrap();
-          const plan = eligibility?.plans?.[0];
+          const plan =
+            eligibility?.plans?.find((item) => item?.id) ||
+            eligibility?.plans?.[0];
           if (!plan?.id) {
             toast.error("No pricing plan available to activate listing");
             return;
@@ -474,8 +479,8 @@ export default function CreateEventModal({ isOpen, onClose, editEvent = null, on
           ).unwrap();
 
           toast.success("Event published successfully");
-          if (onSaved) onSaved();
           handleCloseCreateModal();
+          if (onSaved) await onSaved();
           return;
         } catch (error) {
           toast.error(error || "Failed to activate listing");

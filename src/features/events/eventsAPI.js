@@ -339,7 +339,7 @@ const normalizePricingPlan = (item) => ({
   title: item?.title ?? item?.name ?? "Plan",
   price: Number(item?.price ?? 0),
   duration: Number(item?.duration ?? 30),
-  isActive: Boolean(item?.isActive),
+  isActive: item?.isActive !== false,
   isIntroductory: Boolean(item?.isIntroductory),
 });
 
