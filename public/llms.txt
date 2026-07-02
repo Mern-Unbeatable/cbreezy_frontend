@@ -1,0 +1,15 @@
+# SideGurus
+
+> SideGurus is a platform offering professional categories, services, and event management.
+
+## Main Routes
+
+- [Home](https://sidegurus.com/) - The landing page of SideGurus.
+- [Categories](https://sidegurus.com/categories) - Browse available service and business categories.
+- [Services](https://sidegurus.com/services) - Explore the wide range of services provided.
+- [Events](https://sidegurus.com/events) - View current and upcoming events.
+- [About Us](https://sidegurus.com/about) - Read more about SideGurus' mission and team.
+- [Contact Us](https://sidegurus.com/contact) - Get in touch for inquiries or support.
+- [Safety Guides](https://sidegurus.com/safety-guides) - Important guidelines on safety and usage.
+- [SideGuru Suggestions](https://sidegurus.com/sideguru-suggestions) - Handpicked suggestions and recommendations.
+- [Privacy Policy](https://sidegurus.com/privacy) - Information on how data is managed and protected.

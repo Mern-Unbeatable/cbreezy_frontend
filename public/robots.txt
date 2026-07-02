@@ -1,0 +1,6 @@
+# All crawlers can crawl the site
+User-agent: *
+Allow: /
+
+# Sitemaps declaration
+Sitemap: https://sidegurus.com/sitemap.xml
