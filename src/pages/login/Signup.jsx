@@ -75,6 +75,11 @@ export default function Signup() {
     [countries, formData.country]
   );
 
+  const selectedRegion = useMemo(
+    () => regions.find((region) => String(region.id) === String(formData.location)),
+    [regions, formData.location]
+  );
+
   useEffect(() => {
     dispatch(fetchCountries()).unwrap().catch(() => {});
   }, [dispatch]);
@@ -133,7 +138,7 @@ export default function Signup() {
             confirmPassword: formData.confirmPassword,
             phoneNumber: formData.phone || undefined,
             countryName: selectedCountry?.name || "",
-            regionName: formData.location,
+            regionName: selectedRegion?.name || "",
           })
         ).unwrap(),
         {
@@ -383,7 +388,7 @@ export default function Signup() {
               disabled={isSubmitting || isGoogleSubmitting}
               className="w-full py-3 bg-[#e07b39] text-white border-0 rounded text-base font-bold cursor-pointer tracking-wide hover:bg-[#c9692a] transition-colors"
             >
-              {isSubmitting ? "Creating Account..." : "Sign In"}
+              {isSubmitting ? "Creating Account..." : "Sign Up"}
             </button>
 
             <button
