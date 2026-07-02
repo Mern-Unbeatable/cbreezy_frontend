@@ -1,1 +1,0 @@
-import{A as s,R as r,j as o}from"./index-B8jUTx23.js";import{r as t}from"./redux-tE-G1guI.js";import{N as a}from"./vendor-Sj4Ywql3.js";import"./ui-Dh1ASUnS.js";const e=()=>{const{role:e}=t.useContext(s);return e===r.SUB_ADMIN?o.jsx(a,{to:"/admin/listings",replace:!0}):o.jsx(a,{to:"/admin/dashboard",replace:!0})};export{e as default};
