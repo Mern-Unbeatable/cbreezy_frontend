@@ -76,7 +76,7 @@ const AdminListings = () => {
 
   const showLoader = listingsLoading;
   const showSpamReport = activeTab !== "pending";
-  const listingTitleLimit = 60;
+  const listingTitleLimit = 30;
 
   const handleViewListing = (item) => {
     toast.info("Opening listing details...");
