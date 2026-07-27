@@ -4,7 +4,7 @@ import axios from 'axios'
 import { STORAGE_KEYS } from '../utils/constants'
 import { clearAuthSession } from '../utils/authSession'
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/'
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend.sidegurus.com/'
 
 
 const apiClient = axios.create({
