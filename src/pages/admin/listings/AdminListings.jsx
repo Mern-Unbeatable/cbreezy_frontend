@@ -19,6 +19,7 @@ import {
   fetchAdminListings,
   updateAdminListingStatus,
 } from "../../../features/admin/adminSlice";
+import { truncateText } from "../../../utils/helpers";
 
 const MobileInfoField = ({ label, value, strong = false }) => (
   <div className="rounded-lg border border-[#eceff3] bg-white px-3 py-2.5 min-w-0">
@@ -75,6 +76,7 @@ const AdminListings = () => {
 
   const showLoader = listingsLoading;
   const showSpamReport = activeTab !== "pending";
+  const listingTitleLimit = 60;
 
   const handleViewListing = (item) => {
     toast.info("Opening listing details...");
@@ -298,7 +300,9 @@ const AdminListings = () => {
                   className="border border-[#e4e4e4] text-sm md:text-base text-[#374151] bg-white"
                 >
                   <td className="px-2 md:px-4 py-3 md:py-4 whitespace-nowrap">
-                    {item.title}
+                    <span title={item.title}>
+                      {truncateText(item.title, listingTitleLimit)}
+                    </span>
                   </td>
                   <td className="px-2 md:px-4 py-3 md:py-4 whitespace-nowrap">
                     {item.listingType}
@@ -360,8 +364,11 @@ const AdminListings = () => {
                 <div className="flex min-h-64.5 flex-col gap-3">
                   <div className="min-w-0">
                     <p className="text-[11px] font-medium uppercase tracking-wide text-[#8b95a5]">Listing Name</p>
-                    <p className="mt-1 text-base font-semibold leading-tight text-[#111827] wrap-break-word">
-                      {item.title}
+                    <p
+                      className="mt-1 text-base font-semibold leading-tight text-[#111827] wrap-break-word"
+                      title={item.title}
+                    >
+                      {truncateText(item.title, listingTitleLimit)}
                     </p>
                   </div>
 
